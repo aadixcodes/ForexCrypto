@@ -1,6 +1,8 @@
 import { HeroSection } from "@/components/hero-section";
 import { AboutSection } from "@/components/about-section";
 import { Features } from "@/components/features";
+import { Contact } from "@/components/contact";
+import { Trusted } from "@/components/trust";
 
 export default function Home() {
   return (
@@ -8,6 +10,8 @@ export default function Home() {
       <HeroSection />
       <Features />
       <AboutSection />
+      <Trusted />
+      <Contact />
     </div>
   );
 }

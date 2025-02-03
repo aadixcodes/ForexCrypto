@@ -34,7 +34,14 @@ const features = [
 export function Features() {
   return (
     <section className="py-24 relative overflow-hidden">
-      <div className="container px-4 mx-auto">
+      {/* Blurred background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/10 w-[800px] h-[400px] blur-[100px] rounded-full" />
+        </div>
+      </div>
+
+      <div className="container px-4 mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -43,7 +50,7 @@ export function Features() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Why Choose ForexPro
+            Benefits Of ForexCrypto
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Experience the advantage of trading with a platform that combines cutting-edge 
