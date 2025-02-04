@@ -1,40 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LineChart, Shield, Zap, BarChart2, Coins } from "lucide-react";
-
-const features = [
-  {
-    icon: <LineChart className="h-6 w-6" />,
-    title: "Low Spreads & High Leverage",
-    description: "Trade major forex pairs with competitive spreads and leverage up to 1:500"
-  },
-  {
-    icon: <Zap className="h-6 w-6" />,
-    title: "AI-Powered Signals",
-    description: "Get real-time trading signals powered by advanced machine learning algorithms"
-  },
-  {
-    icon: <BarChart2 className="h-6 w-6" />,
-    title: "Advanced Analytics",
-    description: "Access professional-grade charts, indicators, and technical analysis tools"
-  },
-  {
-    icon: <Shield className="h-6 w-6" />,
-    title: "Secure Trading",
-    description: "Your funds are protected with bank-grade security and encryption"
-  },
-  {
-    icon: <Coins className="h-6 w-6" />,
-    title: "Fast Withdrawals",
-    description: "Quick and hassle-free withdrawals with multiple payment options"
-  }
-];
+import { Button } from "@/components/ui/button";
+import { LifeBuoy, Clock, BarChart } from "lucide-react";
 
 export function Features() {
   return (
-    <section className="py-24 relative overflow-hidden">
-      {/* Blurred background effects */}
+    <section id='features' className="relative py-20 overflow-hidden">
+      {/* Blurred background effects matching features.tsx */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className="bg-gradient-to-r from-green-500/20 to-blue-500/10 w-[800px] h-[400px] blur-[100px] rounded-full" />
@@ -45,40 +18,96 @@ export function Features() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="max-w-4xl mx-auto text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Benefits Of ForexCrypto
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Built for the Future of{' '}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-600">
+              Trusted Today and Tomorrow
+            </span>
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Experience the advantage of trading with a platform that combines cutting-edge 
-            technology with professional trading tools.
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Experience unmatched reliability in forex trading, institutional-grade liquidity provisioning, 
+            and next-generation financial services engineered for precision and performance.
           </p>
+          <motion.div
+            initial={{ scale: 0.95 }}
+            whileInView={{ scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Button 
+              size="lg" 
+              className="bg-green-500 hover:bg-green-600 rounded-full px-8 py-6 text-lg font-semibold shadow-lg shadow-green-500/20"
+            >
+              Start Trading Now
+              <LifeBuoy className="ml-2 h-5 w-5" />
+            </Button>
+          </motion.div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="relative group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative p-6 bg-card/50 backdrop-blur-sm rounded-lg border border-border hover:border-primary/50 transition-colors">
-                <div className="p-3 bg-primary/10 rounded-lg w-fit mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </div>
-            </motion.div>
-          ))}
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+          {/* Seamless Support Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(74, 222, 128, 0.2)" }}
+            className="p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border hover:border-primary/50 transition-colors"
+          >
+            <div className="mb-6 p-4 bg-primary/10 rounded-full w-fit">
+              <LifeBuoy className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-4">Seamless Support</h3>
+            <p className="text-muted-foreground">
+              24/7 institutional-grade engineering support with full compliance monitoring 
+              and real-time system health checks.
+            </p>
+          </motion.div>
+
+          {/* On-time Execution Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(74, 222, 128, 0.2)" }}
+            className="p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border hover:border-primary/50 transition-colors"
+          >
+            <div className="mb-6 p-4 bg-primary/10 rounded-full w-fit">
+              <Clock className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-4">On-time Execution</h3>
+            <p className="text-muted-foreground">
+              Microsecond-order execution speeds with 99.99% uptime SLA, powered by 
+              colocated trading infrastructure.
+            </p>
+          </motion.div>
+
+          {/* Liquidity Delivered Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(74, 222, 128, 0.2)" }}
+            className="p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border hover:border-primary/50 transition-colors"
+          >
+            <div className="mb-6 p-4 bg-primary/10 rounded-full w-fit">
+              <BarChart className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-4">Liquidity Delivered</h3>
+            <p className="text-muted-foreground">
+              Deep liquidity pools aggregating top-tier providers with smart order 
+              routing for optimal fill ratios.
+            </p>
+          </motion.div>
         </div>
+      </div>
+
+      {/* Additional glow effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/4 left-1/4 w-1/2 h-1/2 bg-green-500/10 blur-[120px] rounded-full" />
+        <div className="absolute -bottom-1/4 right-1/4 w-1/2 h-1/2 bg-blue-500/10 blur-[120px] rounded-full" />
       </div>
     </section>
   );

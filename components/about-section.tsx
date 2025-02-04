@@ -29,7 +29,7 @@ export function AboutSection() {
             className="space-y-6"
           >
             <h2 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-green-400">
-              What is ForexPro Vision?
+              What is ForexCrypto Vision?
             </h2>
             <p className="text-lg text-muted-foreground">
               We are ForexPro, the leading global forex trading platform

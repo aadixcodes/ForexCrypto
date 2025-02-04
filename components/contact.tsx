@@ -8,7 +8,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 
 export function Contact() {
   return (
-    <section className="relative py-24 overflow-hidden">
+    <section id='contact' className="relative py-24 overflow-hidden">
       {/* Blurred background effect matching features.tsx */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
