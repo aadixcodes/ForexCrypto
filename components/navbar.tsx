@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LineChart, Wallet, BookOpen, BarChart3, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -46,15 +46,15 @@ export function Navbar() {
     { href: "#contact", label: "Contact" },
   ];
 
-  const dropdownItems = {
-    "Forex Trading": [
-      { href: "/market-rates", label: "Market Rates", icon: <LineChart className="h-4 w-4" /> },
-      { href: "/tools", label: "Trading Tools", icon: <Wallet className="h-4 w-4" /> },
-    ],
-    "Trading Academy": [
-      { href: "/education", label: "Education", icon: <BookOpen className="h-4 w-4" /> },
-    ],
-  };
+  // const dropdownItems = {
+  //   "Forex Trading": [
+  //     { href: "/market-rates", label: "Market Rates", icon: <LineChart className="h-4 w-4" /> },
+  //     { href: "/tools", label: "Trading Tools", icon: <Wallet className="h-4 w-4" /> },
+  //   ],
+  //   "Trading Academy": [
+  //     { href: "/education", label: "Education", icon: <BookOpen className="h-4 w-4" /> },
+  //   ],
+  // };
 
   const handleScroll = (href: string) => {
     if (window.location.pathname === "/") {

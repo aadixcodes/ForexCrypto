@@ -91,7 +91,7 @@ function LoginPage() {
             <div className="mt-6 text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Link
-                href="#"
+                href="/signup"
                 className="text-primary hover:text-green-600 transition-colors font-medium"
               >
                 Sign up here
