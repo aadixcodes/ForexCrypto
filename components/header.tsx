@@ -1,16 +1,11 @@
-// Header.tsx
-"use client";
-
+'use client';
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Bell, UserCircle, CheckCircle2, AlertTriangle, DollarSign } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Menu, Transition } from '@headlessui/react'
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
 
 export function Header() {
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [notifications] = useState([
     {
       id: 1,
@@ -35,45 +30,6 @@ export function Header() {
     }
   ]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setShowWelcome(window.innerWidth >= 1024);
-    };
-
-    // Check initial size
-    handleResize();
-
-    // Add resize listener
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Update showWelcome based on menu button visibility
-  useEffect(() => {
-    const handleMenuVisibility = () => {
-      if (window.innerWidth < 1024) {
-        const menuButton = document.querySelector('[data-menu-button]');
-        setShowWelcome(menuButton ? window.getComputedStyle(menuButton).opacity === '0' : false);
-      }
-    };
-
-    // Create a MutationObserver to watch for changes in the menu button's style
-    const observer = new MutationObserver(handleMenuVisibility);
-    const menuButton = document.querySelector('[data-menu-button]');
-    
-    if (menuButton) {
-      observer.observe(menuButton, {
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      });
-    }
-
-    // Check initial state
-    handleMenuVisibility();
-
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <motion.header
       initial={{ y: -20 }}
@@ -81,15 +37,18 @@ export function Header() {
       className="sticky top-0 border-b bg-background/80 backdrop-blur-lg z-30 h-16"
     >
       <div className="h-full flex items-center justify-between px-6 border-x">
-        <div className="flex items-center">
-          <h1 className={`text-xl font-semibold transition-opacity duration-300 ${
-            showWelcome ? 'opacity-100' : 'opacity-0'
-          }`}>
+        {/* Welcome message with responsive hiding */}
+        <div className="hidden lg:block">
+          <h1 className="text-xl font-semibold">
             Welcome Aditya !
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Empty div for small screens to maintain right alignment */}
+        <div className="lg:hidden flex-1"></div>
+
+        {/* Notifications and Profile section */}
+        <div className="flex items-center gap-2 ml-auto">
           <Menu as="div" className="relative">
             <Menu.Button className="hover:bg-accent rounded-full p-2">
               <div className="relative">
@@ -186,8 +145,8 @@ export function Header() {
                   <Menu.Item>
                     {({ active }) => (
                       <a
-                      href="/"
-                        onClick={() => console.log('Logout')} // Add your logout logic here
+                        href="/"
+                        onClick={() => console.log('Logout')}
                         className={`${
                           active ? 'bg-accent' : ''
                         } group flex w-full items-center rounded-md px-4 py-2 text-sm`}

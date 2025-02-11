@@ -16,12 +16,14 @@ export function NavbarFooterWrapper({ children }: { children: React.ReactNode })
   if (!isMounted) return null;
 
   const isDashboard = pathname?.startsWith('/dashboard') ?? false;
+  const isAdmin = pathname?.startsWith('/admin') ?? false;
+  const showNavbarFooter = !isDashboard && !isAdmin;
 
   return (
     <>
-      {!isDashboard && <Navbar />}
+      {showNavbarFooter && <Navbar />}
       {children}
-      {!isDashboard && <Footer />}
+      {showNavbarFooter && <Footer />}
     </>
   );
 }
