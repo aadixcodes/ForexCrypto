@@ -16,7 +16,7 @@ export default function DepositPage() {
     { id: "wallet", name: "E-Wallet", icon: <Wallet className="h-5 w-5" /> },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitted(true);
     // Add payment processing logic here
