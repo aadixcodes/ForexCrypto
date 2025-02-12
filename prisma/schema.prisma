@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  password        String
+  name            String
+  phone           String         @unique
+  aadharNo        String         @unique
+  pan             String         @unique
+  gender          String
+  dob             DateTime
+  nomineeName     String
+  nomineeRelation String
+  bankName        String
+  accountNumber   String         @unique
+  accountHolder   String
+  ifscCode        String
+  address         String
+  isVerified      Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  orders          OrderHistory[]
+  transactions    Transaction[]
+}
+
+model Transaction {
+  id                String            @id @default(uuid())
+  userId            String
+  type              TransactionType
+  transactionId     String            @unique
+  razorpayPaymentId String            @unique
+  status            TransactionStatus
+  timestamp         DateTime          @default(now())
+  amount            Float
+  user              User              @relation(fields: [userId], references: [id])
+}
+
+model OrderHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  tradeDate   DateTime
+  tradeAmount Float
+  quantity    Int
+  buyPrice    Float
+  sellPrice   Float
+  profitLoss  Float
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum TransactionType {
+  WITHDRAW
+  DEPOSIT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+}

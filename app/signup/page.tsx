@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ArrowRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from '../auth-context';
 
 const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,9 +19,34 @@ const SignupForm = () => {
     // ... other form fields
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { setAuth } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
+
+    try {
+      const response = await fetch('/api/user/sign-up/route', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Signup successful:', data);
+        setAuth(data.user.id, data.user.email);
+        // Redirect to the dashboard or desired page
+      } else {
+        const errorData = await response.json();
+        console.error('Signup error:', errorData);
+        // Handle error state
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      // Handle error state
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

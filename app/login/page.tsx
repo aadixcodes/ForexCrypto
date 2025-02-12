@@ -15,15 +15,29 @@ function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (username === "aditya@patel" && password === "patel@123") {
-      router.push("/dashboard");
-    } else if (username === "admin@patel" && password === "admin@123") {
-      router.push("/admin");
-    } else {
-      setError("Incorrect username or password. Please try again.");
+
+    try {
+      const response = await fetch("/api/user/log-in/route", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: username, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Login successful:", data);
+        router.push("/dashboard");
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "An error occurred. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -108,7 +122,7 @@ function LoginPage() {
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/signup"
                 className="text-primary hover:text-green-600 transition-colors font-medium"
