@@ -19,7 +19,7 @@ function LoginPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch("/api/user/log-in/route", {
+      const response = await fetch("/api/user/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -27,13 +27,17 @@ function LoginPage() {
         body: JSON.stringify({ email: username, password }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
+        if (!data.user.isVerified) {
+          router.push("/account-not-verified");
+          return;
+        }
         console.log("Login successful:", data);
         router.push("/dashboard");
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || "An error occurred. Please try again.");
+        setError(data.error || "An error occurred. Please try again.");
       }
     } catch (error) {
       console.error("Error:", error);

@@ -14,10 +14,16 @@ export async function POST(request: Request) {
     try {
         const user = await prisma.user.findUnique({
             where: { email },
+            select: {
+                id: true,
+                email: true,
+                password: true,
+                isVerified: true
+            }
         });
 
-        if (!user || !user.isVerified) {
-            return NextResponse.json({ error: 'Invalid credentials or user not verified' }, { status: 401 });
+        if (!user) {
+            return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -25,7 +31,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
 
-        return NextResponse.json({ user: { id: user.id, email: user.email } }, { status: 200 });
+        return NextResponse.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                isVerified: user.isVerified
+            }
+        }, { status: 200 });
     } catch (error) {
         if (error instanceof Error) {
             return NextResponse.json({ error: error.message }, { status: 500 });

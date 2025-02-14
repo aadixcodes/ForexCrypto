@@ -8,24 +8,37 @@ import { Eye, EyeOff, ArrowRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from '../auth-context';
+import { useRouter } from 'next/navigation';
 
 const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
-    // ... other form fields
+    password: "",
+    phone: "",
+    aadharNo: "",
+    pan: "",
+    gender: "",
+    dob: "",
+    nomineeName: "",
+    nomineeRelation: "",
+    bankName: "",
+    accountNumber: "",
+    accountHolder: "",
+    ifscCode: "",
+    address: "",
   });
 
   const { setAuth } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/user/sign-up/route', {
+      const response = await fetch('/api/user/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,8 +49,7 @@ const SignupForm = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Signup successful:', data);
-        setAuth(data.user.id, data.user.email);
-        // Redirect to the dashboard or desired page
+        router.push('/pending-approval');
       } else {
         const errorData = await response.json();
         console.error('Signup error:', errorData);
@@ -97,7 +109,7 @@ const SignupForm = () => {
 
           {/* Signup Form */}
           <div className="bg-card/70 backdrop-blur-lg rounded-xl p-8 border border-green-500/20 shadow-2xl shadow-green-500/10 mb-12">
-            <form className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Personal Information */}
               <div className="space-y-5">
                 <h3 className="text-xl font-semibold text-primary mb-5">Personal Information</h3>
@@ -124,7 +136,14 @@ const SignupForm = () => {
                 <Input placeholder="Gender" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
                 <Input placeholder="Mobile Number" type="tel" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
                 <Input placeholder="Aadhar Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Date of Birth" type="date" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Date of Birth"
+                  type="date"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
                 <Input placeholder="Address" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
               </div>
 
@@ -138,9 +157,20 @@ const SignupForm = () => {
                 <Input placeholder="PAN Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
 
                 <h3 className="text-xl font-semibold text-primary mt-8 mb-5">Nominee Details</h3>
-                <Input placeholder="Nominee Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Nominee Relation" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Nominee Date of Birth" type="date" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Nominee Name"
+                  name="nomineeName"
+                  value={formData.nomineeName}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Nominee Relation"
+                  name="nomineeRelation"
+                  value={formData.nomineeRelation}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
               </div>
 
               {/* Terms & Submit Section */}
