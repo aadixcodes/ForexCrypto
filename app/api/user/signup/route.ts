@@ -5,12 +5,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
-    const { email, password, name, phone, aadharNo, pan, gender, dob, nomineeName, nomineeRelation, bankName, accountNumber, accountHolder, ifscCode, address } = await request.json();
-
-    // Basic validation
-    if (!email || !password || !name || !phone) {
-        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+    const { email, password,firstName,lastName, phone, aadharNo, pan, gender, dob, nomineeName, nomineeRelation, bankName, accountNumber, accountHolder, ifscCode, address } = await request.json();
 
     try {
         // Check if user already exists
@@ -32,7 +27,7 @@ export async function POST(request: Request) {
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-
+        const name = firstName + " " + lastName
         // Create a new user in the database
         const user = await prisma.user.create({
             data: {

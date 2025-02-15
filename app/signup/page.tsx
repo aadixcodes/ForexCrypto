@@ -14,21 +14,23 @@ const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    username: "",
     password: "",
+    gender: "",
     phone: "",
     aadharNo: "",
-    pan: "",
-    gender: "",
     dob: "",
+    address: "",
+    bankName: "",
+    accountHolder: "",
+    accountNumber: "",
+    ifscCode: "",
+    pan: "",
     nomineeName: "",
     nomineeRelation: "",
-    bankName: "",
-    accountNumber: "",
-    accountHolder: "",
-    ifscCode: "",
-    address: "",
   });
 
   const { setAuth } = useAuth();
@@ -114,15 +116,43 @@ const SignupForm = () => {
               <div className="space-y-5">
                 <h3 className="text-xl font-semibold text-primary mb-5">Personal Information</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input placeholder="First Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                  <Input placeholder="Last Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                  <Input
+                    placeholder="First Name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                  />
+                  <Input
+                    placeholder="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                  />
                 </div>
-                <Input placeholder="Email Address" type="email" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Username" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Email Address"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="Password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
                     className="bg-background/80 border-green-500/30 focus:border-green-500/50 pr-10"
                   />
                   <button
@@ -133,9 +163,28 @@ const SignupForm = () => {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                <Input placeholder="Gender" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Mobile Number" type="tel" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Aadhar Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Mobile Number"
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Aadhar Number"
+                  name="aadharNo"
+                  value={formData.aadharNo}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
                 <Input
                   placeholder="Date of Birth"
                   type="date"
@@ -144,17 +193,53 @@ const SignupForm = () => {
                   onChange={handleInputChange}
                   className="bg-background/80 border-green-500/30 focus:border-green-500/50"
                 />
-                <Input placeholder="Address" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
               </div>
 
               {/* Bank & Nominee Details */}
               <div className="space-y-5">
                 <h3 className="text-xl font-semibold text-primary mb-5">Bank Details</h3>
-                <Input placeholder="Bank Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Account Holder Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Account Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="IFSC Code" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="PAN Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Bank Name"
+                  name="bankName"
+                  value={formData.bankName}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Account Holder Name"
+                  name="accountHolder"
+                  value={formData.accountHolder}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Account Number"
+                  name="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="IFSC Code"
+                  name="ifscCode"
+                  value={formData.ifscCode}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="PAN Number"
+                  name="pan"
+                  value={formData.pan}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
 
                 <h3 className="text-xl font-semibold text-primary mt-8 mb-5">Nominee Details</h3>
                 <Input
