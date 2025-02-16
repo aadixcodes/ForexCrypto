@@ -36,11 +36,22 @@ model Transaction {
   userId            String
   type              TransactionType
   transactionId     String            @unique
-  razorpayPaymentId String            @unique
+  razorpayPaymentId String?           @unique
+  razorpaySignature String?
   status            TransactionStatus
-  timestamp         DateTime          @default(now())
   amount            Float
+  currency          String            @default("INR")
+  description       String?
+  metadata          Json?
+  failureReason     String?
+  timestamp         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  paymentMethod     PaymentMethod?
   user              User              @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([timestamp])
 }
 
 model OrderHistory {
@@ -63,4 +74,14 @@ enum TransactionType {
 enum TransactionStatus {
   PENDING
   COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CARD
+  UPI
+  NETBANKING
+  WALLET
 }
