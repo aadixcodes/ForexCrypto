@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { QrCode, CreditCard, Banknote, Wallet, CheckCircle } from "lucide-react";
 import Razorpay from "razorpay";
+import { useAuth } from "@/app/auth-context";
 
 // Define types
 type PaymentMethod = {
@@ -23,6 +24,7 @@ export default function DepositPage() {
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { userId } = useAuth();
 
   const paymentMethods: PaymentMethod[] = [
     { id: "card", name: "Credit Card", icon: <CreditCard className="h-5 w-5" /> },
@@ -53,7 +55,10 @@ export default function DepositPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ amount: parseFloat(amount) * 100 }), // Convert to paise
+        body: JSON.stringify({ 
+          amount: parseFloat(amount) * 100,
+          userId
+        }),
       });
 
       const data = await response.json();
@@ -79,6 +84,7 @@ export default function DepositPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
                 amount: parseFloat(amount),
+                userId
               }),
             });
 

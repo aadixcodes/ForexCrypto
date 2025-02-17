@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
-import { useAuth } from "@/app/auth-context";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -10,13 +9,11 @@ const razorpay = new Razorpay({
 
 export async function POST(req: Request) {
   try {
-    const { userId } = useAuth();
+    const { amount, description = "Deposit Transaction", userId } = await req.json();
     
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { amount, description = "Deposit Transaction" } = await req.json();
 
     const order = await razorpay.orders.create({
       amount,

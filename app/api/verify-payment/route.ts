@@ -1,23 +1,21 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { useAuth } from "@/app/auth-context";
 
 export async function POST(req: Request) {
   try {
-    const { userId } = useAuth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const {
       razorpay_payment_id,
       razorpay_order_id,
       razorpay_signature,
       amount,
-      paymentMethod = "CARD"
+      paymentMethod = "CARD",
+      userId
     } = await req.json();
+    
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Verify signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;

@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ArrowRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/auth-context";
 
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { setAuth } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,6 +36,7 @@ function LoginPage() {
           router.push("/account-not-verified");
           return;
         }
+        setAuth(data.user.id, data.user.email);
         console.log("Login successful:", data);
         router.push("/dashboard");
       } else {
