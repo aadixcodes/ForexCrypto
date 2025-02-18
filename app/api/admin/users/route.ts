@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
-
-const prisma = new PrismaClient();
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -17,9 +15,14 @@ const transporter = nodemailer.createTransport({
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
     });
-    return NextResponse.json(users);
+
+    return NextResponse.json({ users });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
   }

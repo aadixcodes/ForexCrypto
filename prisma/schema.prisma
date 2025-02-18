@@ -55,15 +55,20 @@ model Transaction {
 }
 
 model OrderHistory {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   userId      String
   tradeDate   DateTime
-  tradeAmount Float
-  quantity    Int
+  symbol      String    @default("UNKNOWN")
+  quantity    Float
   buyPrice    Float
-  sellPrice   Float
-  profitLoss  Float
-  user        User     @relation(fields: [userId], references: [id])
+  sellPrice   Float?      // Optional since order might not be sold yet
+  type        String      @default("LONG")  // Default to LONG for existing records
+  status      TradeStatus @default(OPEN)
+  profitLoss  Float?      // Optional since P&L only exists for closed trades
+  tradeAmount Float
+  user        User        @relation(fields: [userId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now())   // Default to current timestamp
 }
 
 enum TransactionType {
@@ -84,4 +89,14 @@ enum PaymentMethod {
   UPI
   NETBANKING
   WALLET
+}
+
+enum TradeType {
+  LONG
+  SHORT
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
 }
