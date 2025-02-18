@@ -37,7 +37,6 @@ function LoginPage() {
           return;
         }
         setAuth(data.user.id, data.user.email);
-        console.log("Login successful:", data);
         router.push("/dashboard");
       } else {
         setError(data.error || "An error occurred. Please try again.");

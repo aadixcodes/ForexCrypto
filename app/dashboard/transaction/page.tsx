@@ -1,20 +1,59 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DollarSign, ArrowUp, ArrowDown, Calendar, Wallet, CreditCard } from "lucide-react";
+import { useAuth } from "@/app/auth-context";
 
-const transactions = [
-  { type: "deposit", date: "2023-12-01", description: "Salary Deposit", amount: 5000, status: "completed" },
-  { type: "withdrawal", date: "2023-12-02", description: "Rent Payment", amount: 1500, status: "completed" },
-  { type: "deposit", date: "2023-12-03", description: "Freelance Payment", amount: 2200, status: "pending" },
-  { type: "withdrawal", date: "2023-12-04", description: "Groceries", amount: 350, status: "completed" },
-  { type: "withdrawal", date: "2023-12-05", description: "Utility Bills", amount: 480, status: "completed" },
-];
+type Transaction = {
+  id: string;
+  type: "deposit" | "withdrawal";
+  date: string;
+  description: string;
+  amount: number;
+  status: "completed" | "pending" | "failed" | "refunded" | "cancelled";
+};
 
 export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { userId } = useAuth();
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/transactions?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch transactions');
+        }
+        const data: Transaction[] = await response.json();
+        setTransactions(data);
+      } catch (error) {
+        console.error("Failed to fetch transactions", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [userId]);
+
   const totalDeposits = transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
   const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + t.amount, 0);
   const netFlow = totalDeposits - totalWithdrawals;
+
+  if (!userId) {
+    return <div>Please log in to view transactions</div>;
+  }
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -114,7 +153,7 @@ export default function TransactionsPage() {
             <tbody>
               {transactions.map((transaction, idx) => (
                 <motion.tr
-                  key={idx}
+                  key={transaction.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 * idx }}

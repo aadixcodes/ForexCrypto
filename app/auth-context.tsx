@@ -23,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setAuth = (userId: string, email: string) => {
     setUserId(userId);
     setEmail(email);
+    console.log(userId,email)
   };
 
   return (
