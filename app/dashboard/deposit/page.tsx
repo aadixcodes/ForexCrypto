@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { QrCode, CreditCard, Banknote, Wallet, CheckCircle } from "lucide-react";
-import Razorpay from "razorpay";
 import { useAuth } from "@/app/auth-context";
 
 // Define types

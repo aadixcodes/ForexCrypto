@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { TransactionStatus, TransactionType } from '@prisma/client';
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'User ID is required' },
+        { success: false, message: "User ID is required" },
         { status: 400 }
       );
     }
@@ -21,31 +22,32 @@ export async function GET(request: Request) {
       orderBy: {
         timestamp: 'desc',
       },
-      select: {
-        id: true,
-        type: true,
-        amount: true,
-        status: true,
-        description: true,
-        timestamp: true,
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            bankName: true,
+            accountNumber: true,
+            accountHolder: true,
+            ifscCode: true,
+          }
+        }
       }
     });
 
-    // Transform the data to match the frontend Transaction type
-    const formattedTransactions = transactions.map(transaction => ({
-      id: transaction.id,
-      type: transaction.type.toLowerCase() as "deposit" | "withdrawal",
-      date: transaction.timestamp.toISOString().split('T')[0],
-      description: transaction.description || '',
-      amount: transaction.amount,
-      status: transaction.status.toLowerCase()
-    }));
-
-    return NextResponse.json(formattedTransactions);
+    return NextResponse.json({
+      success: true,
+      transactions: transactions.map(t => ({
+        ...t,
+        type: t.type as TransactionType,
+        status: t.status as TransactionStatus
+      }))
+    });
   } catch (error) {
-    console.error("Error fetching transactions:", error);
+    console.error("Failed to fetch transactions:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { success: false, message: "Failed to fetch transactions" },
       { status: 500 }
     );
   }

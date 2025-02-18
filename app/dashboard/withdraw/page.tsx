@@ -7,14 +7,28 @@ import { useAuth } from "@/app/auth-context";
 
 export default function WithdrawPage() {
   const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { userId } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("userId", userId);
+    setError(null);
     setIsLoading(true);
+
+    if (!userId) {
+      setError("You must be logged in to make a withdrawal");
+      setIsLoading(false);
+      return;
+    }
+
+    const withdrawalAmount = parseFloat(amount);
+    if (isNaN(withdrawalAmount) || withdrawalAmount < 10) {
+      setError("Please enter a valid amount (minimum ₹10)");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/create-withdrawal", {
@@ -23,7 +37,7 @@ export default function WithdrawPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: parseFloat(amount),
+          amount: withdrawalAmount,
           userId,
         }),
       });
@@ -36,8 +50,8 @@ export default function WithdrawPage() {
         throw new Error(data.message || "Withdrawal request failed");
       }
     } catch (error) {
-      console.error("Withdrawal failed:", error);
-      alert("Withdrawal failed. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Withdrawal failed. Please try again.";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -75,9 +89,12 @@ export default function WithdrawPage() {
                   required
                 />
                 <span className="absolute right-4 top-3.5 text-muted-foreground">
-                  USD
+                  ₹
                 </span>
               </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-500">{error}</p>
+              )}
             </div>
 
             <button

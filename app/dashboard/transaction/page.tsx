@@ -2,20 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { DollarSign, ArrowUp, ArrowDown, Calendar, Wallet, CreditCard } from "lucide-react";
+import { ArrowUp, ArrowDown, Calendar, Wallet, CreditCard } from "lucide-react";
 import { useAuth } from "@/app/auth-context";
-
-type Transaction = {
-  id: string;
-  type: "deposit" | "withdrawal";
-  date: string;
-  description: string;
-  amount: number;
-  status: "completed" | "pending" | "failed" | "refunded" | "cancelled";
-};
+import { TransactionType, TransactionStatus } from "@prisma/client";
+import { WithdrawalRequest } from "@/app/types/transaction";
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { userId } = useAuth();
 
@@ -31,8 +24,10 @@ export default function TransactionsPage() {
         if (!response.ok) {
           throw new Error('Failed to fetch transactions');
         }
-        const data: Transaction[] = await response.json();
-        setTransactions(data);
+        const data = await response.json();
+        if (data.success) {
+          setTransactions(data.transactions);
+        }
       } catch (error) {
         console.error("Failed to fetch transactions", error);
       } finally {
@@ -43,9 +38,37 @@ export default function TransactionsPage() {
     fetchTransactions();
   }, [userId]);
 
-  const totalDeposits = transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
-  const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + t.amount, 0);
-  const netFlow = totalDeposits - totalWithdrawals;
+  // Calculate totals
+  const totalDeposits = transactions
+    .filter(t => t.type === TransactionType.DEPOSIT)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalWithdrawals = transactions
+    .filter(t => t.type === TransactionType.WITHDRAW)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const netCashFlow = totalDeposits - totalWithdrawals;
+
+  const stats = [
+    {
+      title: "Total Deposits",
+      value: `₹${totalDeposits.toLocaleString()}`,
+      icon: <ArrowDown className="h-4 w-4 text-green-500" />,
+      className: "text-green-500"
+    },
+    {
+      title: "Total Withdrawals",
+      value: `₹${totalWithdrawals.toLocaleString()}`,
+      icon: <ArrowUp className="h-4 w-4 text-red-500" />,
+      className: "text-red-500"
+    },
+    {
+      title: "Net Cash Flow",
+      value: `₹${netCashFlow.toLocaleString()}`,
+      icon: <Wallet className="h-4 w-4" />,
+      className: netCashFlow >= 0 ? "text-green-500" : "text-red-500"
+    }
+  ];
 
   if (!userId) {
     return <div>Please log in to view transactions</div>;
@@ -65,125 +88,110 @@ export default function TransactionsPage() {
         <h1 className="text-3xl font-bold text-primary mb-6">Transaction History</h1>
       </motion.div>
 
-      {/* Summary Cards */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Deposits</p>
-              <p className="text-2xl font-semibold mt-2">${totalDeposits.toLocaleString()}</p>
+        {stats.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
+                <p className={`text-2xl font-semibold mt-1 ${stat.className}`}>
+                  {stat.value}
+                </p>
+              </div>
+              <div className="p-2 rounded-lg bg-background/50">
+                {stat.icon}
+              </div>
             </div>
-            <div className="p-2 rounded-lg bg-green-400/10">
-              <ArrowUp className="h-6 w-6 text-green-400" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Withdrawals</p>
-              <p className="text-2xl font-semibold mt-2">${totalWithdrawals.toLocaleString()}</p>
-            </div>
-            <div className="p-2 rounded-lg bg-red-400/10">
-              <ArrowDown className="h-6 w-6 text-red-400" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Net Cash Flow</p>
-              <p className={`text-2xl font-semibold mt-2 ${netFlow >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                ${Math.abs(netFlow).toLocaleString()}
-              </p>
-            </div>
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Wallet className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Transaction List */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
         className="bg-background/80 backdrop-blur-lg rounded-xl border shadow-sm overflow-hidden"
       >
-        <div className="p-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
             Recent Transactions
-          </h3>
-          <div className="flex items-center gap-4 text-sm">
-            <button className="hover:text-primary">All</button>
-            <button className="hover:text-primary">Deposits</button>
-            <button className="hover:text-primary">Withdrawals</button>
+          </h2>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center text-muted-foreground">Loading...</div>
+        ) : transactions.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            No transactions found
           </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="text-xs text-muted-foreground border-b">
-              <tr>
-                <th className="p-3 text-left">Date</th>
-                <th className="p-3 text-left">Description</th>
-                <th className="p-3 text-right">Amount</th>
-                <th className="p-3 text-left">Type</th>
-                <th className="p-3 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((transaction, idx) => (
-                <motion.tr
-                  key={transaction.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 * idx }}
-                  className="hover:bg-accent/5 transition-colors"
-                >
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      {transaction.date}
-                    </div>
-                  </td>
-                  <td className="p-3 font-medium">{transaction.description}</td>
-                  <td className={`p-3 text-right font-medium ${transaction.type === 'deposit' ? 'text-green-400' : 'text-red-400'}`}>
-                    {transaction.type === 'deposit' ? '+' : '-'}${transaction.amount}
-                  </td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-xs capitalize ${transaction.type === 'deposit' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'}`}>
-                      {transaction.type}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-xs ${transaction.status === 'completed' ? 'bg-blue-400/10 text-blue-400' : 'bg-yellow-400/10 text-yellow-400'}`}>
-                      {transaction.status}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="p-4 text-left text-muted-foreground">Date</th>
+                  <th className="p-4 text-left text-muted-foreground">Type</th>
+                  <th className="p-4 text-right text-muted-foreground">Amount</th>
+                  <th className="p-4 text-left text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((transaction, idx) => (
+                  <motion.tr
+                    key={transaction.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="border-b last:border-0 hover:bg-muted/50"
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {new Date(transaction.timestamp).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        transaction.type === TransactionType.DEPOSIT 
+                          ? 'bg-green-500/10 text-green-500' 
+                          : 'bg-red-500/10 text-red-500'
+                      }`}>
+                        {transaction.type === TransactionType.DEPOSIT ? 'Deposit' : 'Withdrawal'}
+                      </span>
+                    </td>
+                    <td className={`p-4 text-right font-medium ${
+                      transaction.type === TransactionType.DEPOSIT 
+                        ? 'text-green-500' 
+                        : 'text-red-500'
+                    }`}>
+                      {transaction.type === TransactionType.DEPOSIT ? '+' : '-'}
+                      ₹{transaction.amount.toLocaleString()}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        transaction.status === TransactionStatus.COMPLETED 
+                          ? 'bg-green-500/10 text-green-500'
+                          : transaction.status === TransactionStatus.PENDING
+                          ? 'bg-yellow-500/10 text-yellow-500'
+                          : 'bg-red-500/10 text-red-500'
+                      }`}>
+                        {transaction.status}
+                      </span>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </motion.div>
     </div>
   );
