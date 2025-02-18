@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         amount: amount / 100,
         description,
         metadata: {
-          razorpayOrder: order,
+          razorpayOrder: JSON.parse(JSON.stringify(order)),
           userAgent: req.headers.get("user-agent"),
           ipAddress: req.headers.get("x-forwarded-for") || "unknown"
         },
