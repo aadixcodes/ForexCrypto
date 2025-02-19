@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const transactions = await prisma.transaction.findMany({
       orderBy: {
-        createdAt: 'desc'
+        timestamp: 'desc'
       }
     });
     
