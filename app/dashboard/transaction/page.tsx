@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { ArrowUp, ArrowDown, Calendar, Wallet, CreditCard } from "lucide-react";
 import { useAuth } from "@/app/auth-context";
 import { TransactionType, TransactionStatus } from "@prisma/client";
 import { WithdrawalRequest } from "@/app/types/transaction";
+import dynamic from 'next/dynamic';
 
-export default function TransactionsPage() {
+// Dynamically import the component that fetches data
+const TransactionList = dynamic(
+  () => import('@/components/TransactionList'),
+  { ssr: false }
+);
+
+export default function TransactionPage() {
   const [transactions, setTransactions] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { userId } = useAuth();
@@ -193,6 +200,10 @@ export default function TransactionsPage() {
           </div>
         )}
       </motion.div>
+
+      <Suspense fallback={<div>Loading...</div>}>
+        <TransactionList />
+      </Suspense>
     </div>
   );
 }
