@@ -11,7 +11,9 @@ import { useAuth } from '../auth-context';
 import { useRouter } from 'next/navigation';
 
 const SignupForm = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    password: false,
+  });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -31,6 +33,7 @@ const SignupForm = () => {
     pan: "",
     nomineeName: "",
     nomineeRelation: "",
+    nomineeDob: "",
   });
 
   const { setAuth } = useAuth();
@@ -68,6 +71,13 @@ const SignupForm = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const togglePasswordVisibility = (field: 'password') => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   return (
@@ -148,7 +158,7 @@ const SignupForm = () => {
                 />
                 <div className="relative">
                   <Input
-                    type={showPassword ? "text" : "password"}
+                    type={showPasswords.password ? "text" : "password"}
                     placeholder="Password"
                     name="password"
                     value={formData.password}
@@ -157,10 +167,10 @@ const SignupForm = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-primary"
+                    onClick={() => togglePasswordVisibility('password')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPasswords.password ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 <Input
@@ -253,6 +263,14 @@ const SignupForm = () => {
                   placeholder="Nominee Relation"
                   name="nomineeRelation"
                   value={formData.nomineeRelation}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Nominee Date of Birth"
+                  type="date"
+                  name="nomineeDob"
+                  value={formData.nomineeDob}
                   onChange={handleInputChange}
                   className="bg-background/80 border-green-500/30 focus:border-green-500/50"
                 />

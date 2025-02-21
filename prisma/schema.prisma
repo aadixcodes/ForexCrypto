@@ -29,6 +29,7 @@ model User {
   updatedAt       DateTime       @updatedAt
   orders          OrderHistory[]
   transactions    Transaction[]
+  nomineeDob       DateTime
 }
 
 model Transaction {
