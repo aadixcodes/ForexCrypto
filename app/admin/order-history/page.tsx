@@ -57,9 +57,11 @@ export default function AdminOrderHistory() {
     try {
       const response = await fetch("/api/admin/users");
       const data = await response.json();
-      setUsers(data.users);
+      console.log("API Response:", data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching users:", error);
+      setUsers([]);
     }
   };
 
