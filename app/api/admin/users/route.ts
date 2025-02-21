@@ -15,16 +15,20 @@ const transporter = nodemailer.createTransport({
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
+      include: {
+        transactions: true,
+        orders: true,
+        loanRequest: true,
       },
     });
 
-    return NextResponse.json({ users });
+    return NextResponse.json(users);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    console.error('Error fetching users:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
+      { status: 500 }
+    );
   }
 }
 

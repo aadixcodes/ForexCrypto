@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from '@prisma/client';
 import nodemailer from "nodemailer";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -73,4 +71,45 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
   }
-} 
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: params.userId,
+      },
+      include: {
+        transactions: {
+          orderBy: {
+            timestamp: 'desc'
+          }
+        },
+        orders: {
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        loanRequest: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return NextResponse.json(
+      { error: "Failed to fetch user" },
+      { status: 500 }
+    );
+  }
+}
