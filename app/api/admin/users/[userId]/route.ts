@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,

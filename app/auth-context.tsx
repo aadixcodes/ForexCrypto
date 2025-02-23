@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { getCookie, setCookie, removeCookie } from '@/app/utils/cookies';
 
+export const dynamic = "force-dynamic";
+
 type AuthContextType = {
   userId: string | null;
   email: string | null;
