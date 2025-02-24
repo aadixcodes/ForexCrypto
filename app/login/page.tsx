@@ -47,7 +47,7 @@ function LoginPage() {
         }
         
         // Include name when setting auth
-        setAuth(data.user.id, data.user.email, data.user.name);
+        setAuth(data.user.id, data.user.email, data.user.name, data.user.role);
         
         if (data.user.role === 'admin') {
           router.push("/admin");
