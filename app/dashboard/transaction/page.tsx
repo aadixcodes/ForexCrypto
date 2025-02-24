@@ -28,15 +28,20 @@ export default function TransactionPage() {
 
       try {
         const response = await fetch(`/api/transactions?userId=${userId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch transactions');
-        }
         const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch transactions');
+        }
+
         if (data.success) {
           setTransactions(data.transactions);
+        } else {
+          throw new Error(data.error || 'Failed to fetch transactions');
         }
       } catch (error) {
-        console.error("Failed to fetch transactions", error);
+        console.error("Failed to fetch transactions:", error);
+        // Optionally set an error state here
       } finally {
         setLoading(false);
       }
@@ -200,10 +205,6 @@ export default function TransactionPage() {
           </div>
         )}
       </motion.div>
-
-      <Suspense fallback={<div>Loading...</div>}>
-        <TransactionList />
-      </Suspense>
     </div>
   );
 }
