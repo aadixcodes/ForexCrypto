@@ -10,10 +10,10 @@ type AuthContextType = {
   email: string | null;
   name: string | null;
   isLoading: boolean;
-  role: string | null;
   setAuth: (userId: string, email: string, name: string, role: string) => void;
   logout: () => void;
   login: (email: string, password: string) => Promise<void>;
+  role: string | null;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,10 +21,10 @@ const AuthContext = createContext<AuthContextType>({
   email: null,
   name: null,
   isLoading: true,
-  role: null,
   setAuth: () => {},
   logout: () => {},
   login: async () => {},
+  role: null,
 });
 
 export const useAuth = () => {
@@ -39,8 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUserId = getCookie('userId');
@@ -101,11 +101,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId, 
       email, 
       name,
-      role,
       isLoading, 
       setAuth, 
       logout,
       login,
+      role,
     }}>
       {children}
     </AuthContext.Provider>

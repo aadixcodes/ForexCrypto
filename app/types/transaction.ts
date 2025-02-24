@@ -3,6 +3,10 @@ import { TransactionStatus, TransactionType } from "@prisma/client";
 export interface WithdrawalRequest {
   id: string;
   userId: string;
+  amount: number;
+  type: TransactionType;
+  status: TransactionStatus;
+  timestamp: Date;
   user: {
     name: string;
     email: string;
@@ -13,10 +17,6 @@ export interface WithdrawalRequest {
     accountHolder: string;
     ifscCode: string;
   };
-  amount: number;
-  status: TransactionStatus;
-  type: TransactionType;
-  timestamp: Date;
   transactionId: string;
   description?: string;
   metadata?: {
