@@ -18,7 +18,8 @@ export async function POST(request: Request) {
                 id: true,
                 email: true,
                 password: true,
-                isVerified: true
+                isVerified: true,
+                role: true
             }
         });
 
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
             user: {
                 id: user.id,
                 email: user.email,
-                isVerified: user.isVerified
+                isVerified: user.isVerified,
+                role: user.role
             }
         }, { status: 200 });
     } catch (error) {

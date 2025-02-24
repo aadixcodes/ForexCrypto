@@ -16,15 +16,15 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { userId, isLoading, setAuth } = useAuth();
+  const { setAuth, isLoading, email } = useAuth();
   const router = useRouter();
 
-  // Redirect if already logged in
+  // Pre-fill form from cookies instead of redirecting
   useEffect(() => {
-    if (!isLoading && userId) {
-      router.push('/dashboard');
+    if (!isLoading && email) {
+      setUsername(email);
     }
-  }, [isLoading, userId, router]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +45,16 @@ function LoginPage() {
           router.push("/account-not-verified");
           return;
         }
+        
+        // Only store userId and email
         setAuth(data.user.id, data.user.email);
-        router.push("/dashboard");
+        
+        // Route based on role from API response
+        if (data.user.role === 'admin') {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
       } else {
         setError(data.error || "An error occurred. Please try again.");
       }
