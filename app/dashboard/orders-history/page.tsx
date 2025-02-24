@@ -1,46 +1,72 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, Coins, BarChart } from "lucide-react";
-
-const orders = [
-  { 
-    date: "2023-12-01",
-    symbol: "BTC/USD",
-    quantity: 0.5,
-    buyPrice: 42000,
-    sellPrice: 43500,
-    type: "Long",
-    status: "closed"
-  },
-  { 
-    date: "2023-12-02",
-    symbol: "ETH/USD",
-    quantity: 5,
-    buyPrice: 2200,
-    sellPrice: 2150,
-    type: "Short",
-    status: "closed"
-  },
-  { 
-    date: "2023-12-03",
-    symbol: "AAPL",
-    quantity: 100,
-    buyPrice: 192,
-    sellPrice: 198,
-    type: "Long",
-    status: "open"
-  },
-];
+import { Briefcase, DollarSign, Coins, BarChart, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Order } from "@/app/types/orders";
+import { useAuth } from "@/app/auth-context";
 
 export default function OrdersHistoryPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'CLOSED'>('ALL');
+  const { email, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && email) {
+      fetchOrders();
+    }
+  }, [email, authLoading]);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('/api/orders');
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      const data = await response.json();
+      setOrders(data.orders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show loading state while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show unauthorized message if not logged in
+  if (!email) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center text-muted-foreground">
+          Please log in to view your order history
+        </div>
+      </div>
+    );
+  }
+
+  // Rest of your existing component code...
   const totalTrades = orders.length;
-  const totalVolume = orders.reduce((sum, o) => sum + (o.quantity * o.buyPrice), 0);
+  const totalVolume = orders.reduce((sum, o) => sum + (o.tradeAmount || 0), 0);
   const netPNL = orders.reduce((sum, o) => {
-    const pnl = (o.sellPrice - o.buyPrice) * o.quantity * (o.type === "Short" ? -1 : 1);
-    return o.status === "closed" ? sum + pnl : sum;
+    if (o.status === 'CLOSED' && o.profitLoss) {
+      return sum + o.profitLoss;
+    }
+    return sum;
   }, 0);
 
+  const filteredOrders = orders.filter(order => {
+    if (filter === 'ALL') return true;
+    return order.status === filter;
+  });
   return (
     <div className="space-y-6 p-4 md:p-6">
       <motion.div
@@ -119,34 +145,48 @@ export default function OrdersHistoryPage() {
             Order History
           </h3>
           <div className="flex items-center gap-4 text-sm">
-            <button className="hover:text-primary">All</button>
-            <button className="hover:text-primary">Open</button>
-            <button className="hover:text-primary">Closed</button>
+            <button 
+              onClick={() => setFilter('ALL')}
+              className={`hover:text-primary transition-colors ${filter === 'ALL' ? 'text-primary' : ''}`}
+            >
+              All
+            </button>
+            <button 
+              onClick={() => setFilter('OPEN')}
+              className={`hover:text-primary transition-colors ${filter === 'OPEN' ? 'text-primary' : ''}`}
+            >
+              Open
+            </button>
+            <button 
+              onClick={() => setFilter('CLOSED')}
+              className={`hover:text-primary transition-colors ${filter === 'CLOSED' ? 'text-primary' : ''}`}
+            >
+              Closed
+            </button>
           </div>
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="text-xs text-muted-foreground border-b">
-              <tr>
-                <th className="p-3 text-left">Date</th>
-                <th className="p-3 text-left">Symbol</th>
-                <th className="p-3 text-right">Qty</th>
-                <th className="p-3 text-right">Buy Price</th>
-                <th className="p-3 text-right">Sell Price</th>
-                <th className="p-3 text-left">Type</th>
-                <th className="p-3 text-right">P&L</th>
-                <th className="p-3 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order, idx) => {
-                const pnl = (order.sellPrice - order.buyPrice) * order.quantity * (order.type === "Short" ? -1 : 1);
-                const isPositive = pnl >= 0;
-                
-                return (
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">Loading...</div>
+          ) : (
+            <table className="w-full">
+              <thead className="text-xs text-muted-foreground border-b">
+                <tr>
+                  <th className="p-3 text-left">Date</th>
+                  <th className="p-3 text-left">Symbol</th>
+                  <th className="p-3 text-right">Qty</th>
+                  <th className="p-3 text-right">Buy Price</th>
+                  <th className="p-3 text-right">Sell Price</th>
+                  <th className="p-3 text-left">Type</th>
+                  <th className="p-3 text-right">P&L</th>
+                  <th className="p-3 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredOrders.map((order, idx) => (
                   <motion.tr
-                    key={idx}
+                    key={order.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 * idx }}
@@ -155,34 +195,44 @@ export default function OrdersHistoryPage() {
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {order.date}
+                        {new Date(order.tradeDate).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="p-3 font-medium">{order.symbol}</td>
                     <td className="p-3 text-right">{order.quantity}</td>
                     <td className="p-3 text-right">${order.buyPrice}</td>
-                    <td className="p-3 text-right">${order.sellPrice}</td>
+                    <td className="p-3 text-right">{order.sellPrice ? `$${order.sellPrice}` : '-'}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${order.type === 'Long' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        order.type === 'LONG' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'
+                      }`}>
                         {order.type}
                       </span>
                     </td>
-                    <td className={`p-3 text-right font-medium ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                    <td className={`p-3 text-right font-medium ${
+                      order.profitLoss && order.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
                       <div className="flex items-center justify-end gap-1">
-                        {isPositive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                        ${Math.abs(pnl).toFixed(2)}
+                        {order.profitLoss && order.profitLoss >= 0 ? (
+                          <ArrowUpRight className="h-4 w-4" />
+                        ) : (
+                          <ArrowDownRight className="h-4 w-4" />
+                        )}
+                        ${Math.abs(order.profitLoss || 0).toFixed(2)}
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${order.status === 'open' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-blue-400/10 text-blue-400'}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        order.status === 'OPEN' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-blue-400/10 text-blue-400'
+                      }`}>
                         {order.status}
                       </span>
                     </td>
                   </motion.tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </motion.div>
     </div>

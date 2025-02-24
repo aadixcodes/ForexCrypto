@@ -1,11 +1,21 @@
 'use client';
 import { motion } from "framer-motion";
 import { Bell, UserCircle, CheckCircle2, AlertTriangle, DollarSign } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, Transition } from '@headlessui/react'
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
+import { useAuth } from '@/app/auth-context';
+import { useRouter } from "next/navigation";
 
 export function Header() {
+  const { logout, name } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
   const [notifications] = useState([
     {
       id: 1,
@@ -40,7 +50,7 @@ export function Header() {
         {/* Welcome message with responsive hiding */}
         <div className="hidden lg:block">
           <h1 className="text-xl font-semibold">
-            Welcome Aditya !
+            Welcome {name || 'Trader'} !
           </h1>
         </div>
 
@@ -143,19 +153,22 @@ export function Header() {
                     )}
                   </Menu.Item>
                   <Menu.Item>
-                    {({ active }) => (
-                      <a
-                        href="/"
-                        onClick={() => console.log('Logout')}
-                        className={`${
-                          active ? 'bg-accent' : ''
-                        } group flex w-full items-center rounded-md px-4 py-2 text-sm`}
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                      </a>
-                    )}
-                  </Menu.Item>
+                      {({ active }) => (
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleLogout();
+                          }}
+                          className={`${
+                            active ? 'bg-accent' : ''
+                          } group flex w-full items-center rounded-md px-4 py-2 text-sm`}
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Logout
+                        </a>
+                      )}
+                  </Menu.Item>      
                 </div>
               </Menu.Items>
             </Transition>

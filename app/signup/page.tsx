@@ -7,20 +7,63 @@ import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ArrowRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from '../auth-context';
+import { useRouter } from 'next/navigation';
 
 const SignupForm = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    password: false,
+  });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    // ... other form fields
+    username: "",
+    password: "",
+    gender: "",
+    phone: "",
+    aadharNo: "",
+    dob: "",
+    address: "",
+    bankName: "",
+    accountHolder: "",
+    accountNumber: "",
+    ifscCode: "",
+    pan: "",
+    nomineeName: "",
+    nomineeRelation: "",
+    nomineeDob: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { setAuth } = useAuth();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
+
+    try {
+      const response = await fetch('/api/user/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Signup successful:', data);
+        router.push('/pending-approval');
+      } else {
+        const errorData = await response.json();
+        console.error('Signup error:', errorData);
+        // Handle error state
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      // Handle error state
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,6 +71,13 @@ const SignupForm = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const togglePasswordVisibility = (field: 'password') => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   return (
@@ -71,50 +121,159 @@ const SignupForm = () => {
 
           {/* Signup Form */}
           <div className="bg-card/70 backdrop-blur-lg rounded-xl p-8 border border-green-500/20 shadow-2xl shadow-green-500/10 mb-12">
-            <form className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Personal Information */}
               <div className="space-y-5">
                 <h3 className="text-xl font-semibold text-primary mb-5">Personal Information</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input placeholder="First Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                  <Input placeholder="Last Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                  <Input
+                    placeholder="First Name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                  />
+                  <Input
+                    placeholder="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                  />
                 </div>
-                <Input placeholder="Email Address" type="email" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Username" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Email Address"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
                 <div className="relative">
                   <Input
-                    type={showPassword ? "text" : "password"}
+                    type={showPasswords.password ? "text" : "password"}
                     placeholder="Password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
                     className="bg-background/80 border-green-500/30 focus:border-green-500/50 pr-10"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-primary"
+                    onClick={() => togglePasswordVisibility('password')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPasswords.password ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                <Input placeholder="Gender" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Mobile Number" type="tel" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Aadhar Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Date of Birth" type="date" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Address" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Mobile Number"
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Aadhar Number"
+                  name="aadharNo"
+                  value={formData.aadharNo}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Date of Birth"
+                  type="date"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
               </div>
 
               {/* Bank & Nominee Details */}
               <div className="space-y-5">
                 <h3 className="text-xl font-semibold text-primary mb-5">Bank Details</h3>
-                <Input placeholder="Bank Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Account Holder Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Account Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="IFSC Code" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="PAN Number" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Bank Name"
+                  name="bankName"
+                  value={formData.bankName}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Account Holder Name"
+                  name="accountHolder"
+                  value={formData.accountHolder}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Account Number"
+                  name="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="IFSC Code"
+                  name="ifscCode"
+                  value={formData.ifscCode}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="PAN Number"
+                  name="pan"
+                  value={formData.pan}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
 
                 <h3 className="text-xl font-semibold text-primary mt-8 mb-5">Nominee Details</h3>
-                <Input placeholder="Nominee Name" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Nominee Relation" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
-                <Input placeholder="Nominee Date of Birth" type="date" className="bg-background/80 border-green-500/30 focus:border-green-500/50" />
+                <Input
+                  placeholder="Nominee Name"
+                  name="nomineeName"
+                  value={formData.nomineeName}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Nominee Relation"
+                  name="nomineeRelation"
+                  value={formData.nomineeRelation}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
+                <Input
+                  placeholder="Nominee Date of Birth"
+                  type="date"
+                  name="nomineeDob"
+                  value={formData.nomineeDob}
+                  onChange={handleInputChange}
+                  className="bg-background/80 border-green-500/30 focus:border-green-500/50"
+                />
               </div>
 
               {/* Terms & Submit Section */}

@@ -3,23 +3,119 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { QrCode, CreditCard, Banknote, Wallet, CheckCircle } from "lucide-react";
+import { useAuth } from "@/app/auth-context";
+
+// Define types
+type PaymentMethod = {
+  id: string;
+  name: string;
+  icon: JSX.Element;
+};
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState("qr");
+  const [selectedMethod, setSelectedMethod] = useState("card");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { userId } = useAuth();
 
-  const paymentMethods = [
-    { id: "qr", name: "QR Code", icon: <QrCode className="h-5 w-5" /> },
+  const paymentMethods: PaymentMethod[] = [
     { id: "card", name: "Credit Card", icon: <CreditCard className="h-5 w-5" /> },
     { id: "bank", name: "Bank Transfer", icon: <Banknote className="h-5 w-5" /> },
     { id: "wallet", name: "E-Wallet", icon: <Wallet className="h-5 w-5" /> },
   ];
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const initializeRazorpay = async () => {
+    return new Promise<void>((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve();
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    // Add payment processing logic here
+    setIsLoading(true);
+
+    try {
+      // Initialize Razorpay
+      await initializeRazorpay();
+
+      // Create order
+      const response = await fetch("/api/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          amount: parseFloat(amount) * 100,
+          userId
+        }),
+      });
+
+      const data = await response.json();
+
+      // Configure Razorpay
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: parseFloat(amount) * 100,
+        currency: "INR",
+        name: "Your Company Name",
+        description: "Deposit Transaction",
+        order_id: data.orderId,
+        handler: async function (response: RazorpayResponse) {
+          try {
+            // Verify payment
+            const verificationResponse = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                amount: parseFloat(amount),
+                userId
+              }),
+            });
+
+            const verificationData = await verificationResponse.json();
+
+            if (verificationData.success) {
+              setIsSubmitted(true);
+            } else {
+              throw new Error("Payment verification failed");
+            }
+          } catch (error) {
+            console.error("Payment verification failed:", error);
+            alert("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: "User Name",
+          email: "user@example.com",
+        },
+        theme: {
+          color: "#0066FF",
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Payment initialization failed:", error);
+      alert("Payment initialization failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -59,7 +155,7 @@ export default function DepositPage() {
             </div>
 
             {/* Payment Methods */}
-            <div>
+            <div  className="hidden">
               <label className="block text-sm font-medium text-muted-foreground mb-3">
                 Payment Method
               </label>
@@ -83,7 +179,7 @@ export default function DepositPage() {
             </div>
 
             {/* Payment Details */}
-            <div className="space-y-4">
+            <div className="space-y-4 hidden">
               {selectedMethod === "qr" && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -143,13 +239,14 @@ export default function DepositPage() {
 
               {/* Add similar sections for other payment methods */}
 
+            </div>
               <button
                 type="submit"
-                className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors"
+                disabled={isLoading}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Deposit
+                {isLoading ? "Processing..." : "Confirm Deposit"}
               </button>
-            </div>
           </form>
         </motion.div>
       ) : (

@@ -41,6 +41,7 @@ export function AdminSidebar() {
     { name: "Live Charts", href: "/admin/livechart", icon: <BarChart className="h-5 w-5" /> },
     { name: "New Users Request", href: "/admin/new-request", icon: <History className="h-5 w-5" /> },
     { name: "Withdraw Requests", href: "/admin/withdraw-request", icon: <Wallet className="h-5 w-5" /> },
+    { name: "Order History", href: "/admin/order-history", icon: <Wallet className="h-5 w-5" /> },
     { name: "Loan Requests", href: "/admin/loan-request-users", icon: <HandCoins className="h-5 w-5" /> },
     { name: "Total Users", href: "/admin/total-users", icon: <CircleDollarSign className="h-5 w-5" /> },
     // { name: "Transactions", href: "/admin/transaction", icon: <ArrowDownUp className="h-5 w-5" /> },
