@@ -1,85 +1,112 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import { getCookie,setCookie,removeCookie } from './utils/cookies';
 export const dynamic = "force-dynamic";
 
 type AuthContextType = {
   userId: string | null;
   email: string | null;
-  role: string | null;
+  name: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  role: string | null;
+  setAuth: (userId: string, email: string, name: string, role: string) => void;
   logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   userId: null,
   email: null,
+  name: null,
+  isLoading: true,
   role: null,
-  isLoading: false,
-  login: () => Promise.resolve(),
+  setAuth: () => {},
   logout: () => {},
+  login: async () => {},
 });
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/user/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      // Update state with user data
-      setUserId(data.user.id);
-      setEmail(data.user.email);
-      setRole(data.user.role);
-      console.log(data.user);
-      // Redirect based on role
-      if (data.user.role === "admin") {
-        console.log("admin");
-        router.push('/admin');
-      } else {
-        console.log("user")
-        router.push('/dashboard');
-      }
-
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    const storedUserId = getCookie('userId');
+    const storedEmail = getCookie('userEmail');
+    const storedName = getCookie('userName');
+    const storedRole = getCookie('userRole');
+    
+    if (storedUserId && storedEmail) {
+      setUserId(storedUserId);
+      setEmail(storedEmail);
+      setName(storedName);
     }
+    
+    if (storedRole) setRole(storedRole);
+    
+    setIsLoading(false);
+  }, []);
+
+  const setAuth = (userId: string, email: string, name: string, role: string) => {
+    setUserId(userId);
+    setEmail(email);
+    setName(name);
+    setRole(role);
+    
+    setCookie('userId', userId);
+    setCookie('userEmail', email);
+    setCookie('userName', name);
+    setCookie('userRole', role);
   };
 
   const logout = () => {
     setUserId(null);
     setEmail(null);
+    setName(null);
     setRole(null);
-    router.push('/login');
+    
+    removeCookie('userId');
+    removeCookie('userEmail');
+    removeCookie('userName');
+    removeCookie('userRole');
+  };
+
+  const login = async (email: string, password: string) => {
+    const response = await fetch("/api/user/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+
+    setAuth(data.user.id, data.user.email, data.user.name, data.user.role);
   };
 
   return (
-    <AuthContext.Provider value={{ userId, email, role, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ 
+      userId, 
+      email, 
+      name,
+      role,
+      isLoading, 
+      setAuth, 
+      logout,
+      login,
+    }}>
       {children}
     </AuthContext.Provider>
   );
