@@ -3,39 +3,92 @@
 import { motion } from "framer-motion";
 import TradingViewWidget from "@/components/trading-view-widget";
 import { DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuth }  from "@/app/auth-context";
 
-const stats = [
-  { 
-    title: "Account Balance", 
-    value: "$25,000", 
-    change: "+2.4%", 
-    color: "text-green-400",
-    icon: <DollarSign className="h-5 w-5 text-primary" />
-  },
-  { 
-    title: "Overall Gain", 
-    value: "$4,200", 
-    change: "+15.2%", 
-    color: "text-green-400",
-    icon: <TrendingUp className="h-5 w-5 text-primary" />
-  },
-  { 
-    title: "Total Profit", 
-    value: "$8,450", 
-    change: "+32.1%", 
-    color: "text-green-400",
-    icon: <ArrowUpRight className="h-5 w-5 text-primary" />
-  },
-  { 
-    title: "Total Loss", 
-    value: "$1,230", 
-    change: "-4.8%", 
-    color: "text-red-400",
-    icon: <ArrowDownRight className="h-5 w-5 text-primary" />
-  },
-];
+type DashboardData = {
+  accountBalance: number;
+  totalDeposits: number;
+  totalWithdrawals: number;
+  profitLoss: number;
+  recentTrades: Array<{
+    id: string;
+    symbol: string;
+    type: string;
+    profitLoss: number;
+    tradeDate: string;
+  }>;
+};
 
 export default function DashboardPage() {
+  const { userId } = useAuth();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!userId) return;
+
+      try {
+        const response = await fetch('/api/user/dashboard', {
+          headers: {
+            'X-User-Id': userId
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data.dashboardData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [userId]);
+
+  const profitLoss = dashboardData?.profitLoss ?? 0;
+
+  const stats = [
+    { 
+      title: "Account Balance", 
+      value: dashboardData ? `$${dashboardData.accountBalance.toLocaleString()}` : "$0", 
+      change: "+2.4%", 
+      color: "text-green-400",
+      icon: <DollarSign className="h-5 w-5 text-primary" />
+    },
+    { 
+      title: "Total Deposits", 
+      value: dashboardData ? `$${dashboardData.totalDeposits.toLocaleString()}` : "$0", 
+      change: "+15.2%", 
+      color: "text-green-400",
+      icon: <TrendingUp className="h-5 w-5 text-primary" />
+    },
+    { 
+      title: "Total Withdrawals", 
+      value: dashboardData ? `$${dashboardData.totalWithdrawals.toLocaleString()}` : "$0", 
+      change: "+32.1%", 
+      color: "text-green-400",
+      icon: <ArrowUpRight className="h-5 w-5 text-primary" />
+    },
+    { 
+      title: "Profit/Loss", 
+      value: dashboardData ? `$${dashboardData.profitLoss.toLocaleString()}` : "$0", 
+      change: profitLoss >= 0 ? "+4.8%" : "-4.8%", 
+      color: profitLoss >= 0 ? "text-green-400" : "text-red-400",
+      icon: profitLoss >= 0 ? 
+        <TrendingUp className="h-5 w-5 text-primary" /> : 
+        <TrendingDown className="h-5 w-5 text-primary" />
+    },
+  ];
+
+  if (isLoading) {
+    return <div>Loading dashboard data...</div>;
+  }
+
   return (
     <div className="space-y-6 p-4 md:p-6 -mt-4">
       {/* Add this heading section */}

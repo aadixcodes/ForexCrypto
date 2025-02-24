@@ -8,7 +8,7 @@ import { useAuth } from '@/app/auth-context';
 import { useRouter } from "next/navigation";
 
 export function Header() {
-  const { logout } = useAuth();
+  const { logout, name } = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -50,7 +50,7 @@ export function Header() {
         {/* Welcome message with responsive hiding */}
         <div className="hidden lg:block">
           <h1 className="text-xl font-semibold">
-            Welcome Aditya !
+            Welcome {name || 'Trader'} !
           </h1>
         </div>
 

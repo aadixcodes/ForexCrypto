@@ -46,10 +46,9 @@ function LoginPage() {
           return;
         }
         
-        // Only store userId and email
-        setAuth(data.user.id, data.user.email);
+        // Include name when setting auth
+        setAuth(data.user.id, data.user.email, data.user.name);
         
-        // Route based on role from API response
         if (data.user.role === 'admin') {
           router.push("/admin");
         } else {
