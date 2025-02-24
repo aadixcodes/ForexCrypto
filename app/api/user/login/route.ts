@@ -28,6 +28,7 @@ export async function POST(request: Request) {
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
+
         if (!isPasswordValid) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
@@ -36,15 +37,12 @@ export async function POST(request: Request) {
             user: {
                 id: user.id,
                 email: user.email,
-                isVerified: user.isVerified,
-                role: user.role
+                role: user.role,
+                isVerified: user.isVerified
             }
         }, { status: 200 });
     } catch (error) {
-        if (error instanceof Error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        } else {
-            return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
-        }
+        console.error('Login error:', error);
+        return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
     }
 }

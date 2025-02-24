@@ -1,45 +1,23 @@
 'use client'
-import { ReactNode } from "react";
-// import { Sidebar } from "@/components/sidebar";
-// import { Header } from "@/components/header";
+import { ReactNode, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AdminHeader } from "@/components/admin-header";
 import { useAuth } from "@/app/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
-interface AdminLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { userId, isLoading } = useAuth();
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  const { userId, role, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      if (!isLoading) {
-        if (!userId) {
-          router.push('/login');
-          return;
-        }
-
-        try {
-          const response = await fetch('/api/user/me');
-          const data = await response.json();
-          
-          if (data.email !== 'admin@example.com') {
-            router.push('/dashboard');
-          }
-        } catch (error) {
-          console.error('Error checking admin access:', error);
-          router.push('/dashboard');
-        }
+    if (!isLoading) {
+      if (!userId) {
+        router.push('/login');
+      } else if (role !== 'admin') {
+        router.push('/dashboard');
       }
-    };
-
-    checkAdminAccess();
-  }, [userId, isLoading, router]);
+    }
+  }, [userId, role, isLoading, router]);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -54,8 +32,4 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
-} 
-// export default function AdminLayout({ children }: AdminLayoutProps) {
-  
-//   return <>{children}</>;
-// }
+}

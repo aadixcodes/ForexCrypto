@@ -6,12 +6,15 @@ export function middleware(request: NextRequest) {
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') || 
                      request.nextUrl.pathname.startsWith('/signup');
   const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard');
+  const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
 
+  // Redirect logged-in users away from auth pages
   if (isAuthPage && userId) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  if (isDashboardPage && !userId) {
+  // Redirect unauthenticated users to login
+  if ((isDashboardPage || isAdminPage) && !userId) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -19,5 +22,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup']
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/signup']
 }; 

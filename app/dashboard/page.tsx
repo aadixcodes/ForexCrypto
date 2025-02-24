@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import TradingViewWidget from "@/components/trading-view-widget";
-import { DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown } from "lucide-react";
+import { DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp} from "lucide-react";
 
 const stats = [
   { 

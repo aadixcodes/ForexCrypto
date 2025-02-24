@@ -16,10 +16,9 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { userId, isLoading, setAuth } = useAuth();
+  const { userId, isLoading, login } = useAuth();
   const router = useRouter();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!isLoading && userId) {
       router.push('/dashboard');
@@ -28,38 +27,10 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
-        const response = await fetch("/api/user/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email: username, password }),
-        });
-        console.log(response);
-
-        const data = await response.json();
-        console.log(data);
-        if (response.ok) {
-            if (!data.user.isVerified) {
-                router.push("/account-not-verified");
-                return;
-            }
-            setAuth(data.user.id, data.user.email);
-            
-            // Check the user's role and redirect accordingly
-            if (data.user.role === 'admin') {
-                router.push("/admin");
-            } else {
-                router.push("/dashboard");
-            }
-        } else {
-            setError(data.error || "An error occurred. Please try again.");
-        }
+      await login(username, password);
     } catch (error) {
-        console.error("Error:", error);
-        setError("An unexpected error occurred. Please try again.");
+      setError('Invalid credentials');
     }
   };
 
@@ -70,7 +41,6 @@ function LoginPage() {
     }));
   };
 
-  // Show loading state
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -84,7 +54,6 @@ function LoginPage() {
           transition={{ duration: 0.8 }}
           className="max-w-md mx-auto"
         >
-          {/* Logo and Heading */}
           <div className="flex flex-col items-center mb-8">
             <BarChart3 className="h-8 w-8 text-primary mb-4" />
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-green-400">
@@ -93,7 +62,6 @@ function LoginPage() {
             <p className="text-muted-foreground mt-2">Sign in to continue</p>
           </div>
 
-          {/* Login Form */}
           <div className="bg-card/50 backdrop-blur-sm rounded-xl p-8 border border-border shadow-xl">
             <form className="space-y-6" onSubmit={handleSubmit}>
               {error && (
@@ -168,7 +136,6 @@ function LoginPage() {
         </motion.div>
       </div>
 
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-green-500/10 blur-[120px] rounded-full" />
         <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-blue-500/10 blur-[120px] rounded-full" />
