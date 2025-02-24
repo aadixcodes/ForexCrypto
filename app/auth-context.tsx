@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { getCookie, setCookie, removeCookie } from '@/app/utils/cookies';
-
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { getCookie,setCookie,removeCookie } from './utils/cookies';
 export const dynamic = "force-dynamic";
 
 type AuthContextType = {
