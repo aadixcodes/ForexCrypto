@@ -24,7 +24,8 @@ export async function GET(request: Request) {
         const [
             totalDeposits,
             totalWithdrawals,
-            trades
+            recentTransactions,
+            openPositions
         ] = await Promise.all([
             prisma.transaction.aggregate({
                 where: {
@@ -42,16 +43,42 @@ export async function GET(request: Request) {
                 },
                 _sum: { amount: true }
             }),
+            prisma.transaction.findMany({
+                where: { 
+                    userId,
+                    status: 'COMPLETED'
+                },
+                orderBy: { timestamp: 'desc' },
+                take: 5,
+                select: {
+                    id: true,
+                    type: true,
+                    amount: true,
+                    timestamp: true,
+                    status: true
+                }
+            }),
             prisma.orderHistory.findMany({
-                where: { userId },
+                where: { 
+                    userId,
+                    status: 'OPEN'
+                },
                 orderBy: { tradeDate: 'desc' },
-                take: 3
+                select: {
+                    id: true,
+                    symbol: true,
+                    type: true,
+                    profitLoss: true,
+                    tradeDate: true,
+                    quantity: true,
+                    buyPrice: true
+                }
             })
         ]);
 
         // Calculate account balance and other metrics
         const accountBalance = (totalDeposits._sum.amount || 0) - (totalWithdrawals._sum.amount || 0);
-        const profitLoss = trades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
+        const profitLoss = openPositions.reduce((sum, position) => sum + (position.profitLoss || 0), 0);
 
         return NextResponse.json({
             user,
@@ -60,7 +87,8 @@ export async function GET(request: Request) {
                 totalDeposits: totalDeposits._sum.amount || 0,
                 totalWithdrawals: totalWithdrawals._sum.amount || 0,
                 profitLoss,
-                recentTrades: trades
+                recentTransactions,
+                openPositions
             }
         });
     } catch (error) {

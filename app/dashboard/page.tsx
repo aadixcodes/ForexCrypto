@@ -5,23 +5,35 @@ import TradingViewWidget from "@/components/trading-view-widget";
 import { DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth }  from "@/app/auth-context";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 type DashboardData = {
   accountBalance: number;
   totalDeposits: number;
   totalWithdrawals: number;
   profitLoss: number;
-  recentTrades: Array<{
+  recentTransactions: Array<{
+    id: string;
+    type: 'DEPOSIT' | 'WITHDRAW';
+    amount: number;
+    timestamp: string;
+    status: string;
+  }>;
+  openPositions: Array<{
     id: string;
     symbol: string;
     type: string;
     profitLoss: number;
     tradeDate: string;
+    quantity: number;
+    buyPrice: number;
   }>;
 };
 
 export default function DashboardPage() {
   const { userId } = useAuth();
+  const router = useRouter();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -56,28 +68,24 @@ export default function DashboardPage() {
     { 
       title: "Account Balance", 
       value: dashboardData ? `$${dashboardData.accountBalance.toLocaleString()}` : "$0", 
-      change: "+2.4%", 
       color: "text-green-400",
       icon: <DollarSign className="h-5 w-5 text-primary" />
     },
     { 
       title: "Total Deposits", 
       value: dashboardData ? `$${dashboardData.totalDeposits.toLocaleString()}` : "$0", 
-      change: "+15.2%", 
       color: "text-green-400",
       icon: <TrendingUp className="h-5 w-5 text-primary" />
     },
     { 
       title: "Total Withdrawals", 
       value: dashboardData ? `$${dashboardData.totalWithdrawals.toLocaleString()}` : "$0", 
-      change: "+32.1%", 
       color: "text-green-400",
       icon: <ArrowUpRight className="h-5 w-5 text-primary" />
     },
     { 
       title: "Profit/Loss", 
       value: dashboardData ? `$${dashboardData.profitLoss.toLocaleString()}` : "$0", 
-      change: profitLoss >= 0 ? "+4.8%" : "-4.8%", 
       color: profitLoss >= 0 ? "text-green-400" : "text-red-400",
       icon: profitLoss >= 0 ? 
         <TrendingUp className="h-5 w-5 text-primary" /> : 
@@ -91,13 +99,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6 -mt-4">
-      {/* Add this heading section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
+        className="flex justify-between items-center"
       >
-        <h1 className="text-3xl font-bold text-primary mb-6">Dashboard Overview</h1>
+        <h1 className="text-3xl font-bold text-primary">Dashboard Overview</h1>
+        <div className="flex gap-4">
+          <Button 
+            onClick={() => router.push('/deposit')}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            Deposit
+          </Button>
+          <Button 
+            onClick={() => router.push('/withdraw')}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Withdraw
+          </Button>
+        </div>
       </motion.div>
 
       {/* Stats Grid */}
@@ -116,7 +138,6 @@ export default function DashboardPage() {
                 <h3 className="text-sm font-medium text-muted-foreground">{stat.title}</h3>
                 <div className="mt-2 flex items-baseline gap-2">
                   <p className="text-2xl font-semibold">{stat.value}</p>
-                  <span className={`text-sm ${stat.color}`}>{stat.change}</span>
                 </div>
               </div>
               <div className="p-2 rounded-lg bg-primary/10">
@@ -125,6 +146,61 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         ))}
+      </div>
+
+      {/* Recent Activity Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+        >
+          <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
+          <div className="space-y-4">
+            {dashboardData?.recentTransactions?.map((transaction) => (
+              <div key={transaction.id} className="flex justify-between items-center p-3 hover:bg-accent/10 rounded-lg">
+                <div>
+                  <p className="font-medium">{transaction.type}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(transaction.timestamp).toLocaleDateString()}
+                  </p>
+                </div>
+                <span className={`text-sm ${transaction.type === 'DEPOSIT' ? 'text-green-400' : 'text-red-400'}`}>
+                  {transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                </span>
+              </div>
+            )) || (
+              <p className="text-muted-foreground text-center">No recent transactions</p>
+            )}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+        >
+          <h3 className="text-lg font-semibold mb-4">Open Positions</h3>
+          <div className="space-y-4">
+            {dashboardData?.openPositions?.map((position) => (
+              <div key={position.id} className="flex justify-between items-center p-3 hover:bg-accent/10 rounded-lg">
+                <div>
+                  <p className="font-medium">{position.symbol}</p>
+                  <div className="flex gap-2 text-sm text-muted-foreground">
+                    <span>{position.quantity} units</span>
+                    <span>@</span>
+                    <span>${position.buyPrice}</span>
+                  </div>
+                </div>
+                <span className={`text-sm ${position.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {position.profitLoss >= 0 ? '+' : '-'}${Math.abs(position.profitLoss).toLocaleString()}
+                </span>
+              </div>
+            )) || (
+              <p className="text-muted-foreground text-center">No open positions</p>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Chart Section */}
@@ -140,51 +216,6 @@ export default function DashboardPage() {
           <TradingViewWidget />
         </div>
       </motion.div>
-
-      {/* Recent Activity Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
-          <div className="space-y-4">
-            {['Deposit', 'Withdrawal', 'Trade'].map((type, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 hover:bg-accent/10 rounded-lg">
-                <div>
-                  <p className="font-medium">{type} #{idx + 1}</p>
-                  <p className="text-sm text-muted-foreground">2023-12-0{idx + 1}</p>
-                </div>
-                <span className={`text-sm ${idx % 2 ? 'text-green-400' : 'text-red-400'}`}>
-                  {idx % 2 ? '+' : '-'}$500
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <h3 className="text-lg font-semibold mb-4">Open Positions</h3>
-          <div className="space-y-4">
-            {['BTC/USD', 'ETH/USD', 'AAPL'].map((pair, idx) => (
-              <div key={pair} className="flex justify-between items-center p-3 hover:bg-accent/10 rounded-lg">
-                <div>
-                  <p className="font-medium">{pair}</p>
-                  <p className="text-sm text-muted-foreground">{['Long', 'Short'][idx % 2]}</p>
-                </div>
-                <span className={`text-sm ${idx % 2 ? 'text-green-400' : 'text-red-400'}`}>
-                  {idx % 2 ? '+2.5%' : '-1.2%'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
     </div>
   );
 }
