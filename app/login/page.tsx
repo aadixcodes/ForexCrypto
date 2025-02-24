@@ -30,29 +30,36 @@ function LoginPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch("/api/user/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: username, password }),
-      });
+        const response = await fetch("/api/user/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email: username, password }),
+        });
+        console.log(response);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        if (!data.user.isVerified) {
-          router.push("/account-not-verified");
-          return;
+        const data = await response.json();
+        console.log(data);
+        if (response.ok) {
+            if (!data.user.isVerified) {
+                router.push("/account-not-verified");
+                return;
+            }
+            setAuth(data.user.id, data.user.email);
+            
+            // Check the user's role and redirect accordingly
+            if (data.user.role === 'admin') {
+                router.push("/admin");
+            } else {
+                router.push("/dashboard");
+            }
+        } else {
+            setError(data.error || "An error occurred. Please try again.");
         }
-        setAuth(data.user.id, data.user.email);
-        router.push("/dashboard");
-      } else {
-        setError(data.error || "An error occurred. Please try again.");
-      }
     } catch (error) {
-      console.error("Error:", error);
-      setError("An unexpected error occurred. Please try again.");
+        console.error("Error:", error);
+        setError("An unexpected error occurred. Please try again.");
     }
   };
 
