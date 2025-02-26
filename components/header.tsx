@@ -153,21 +153,17 @@ export function Header() {
                     )}
                   </Menu.Item>
                   <Menu.Item>
-                      {({ active }) => (
-                        <a
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleLogout();
-                          }}
-                          className={`${
-                            active ? 'bg-accent' : ''
-                          } group flex w-full items-center rounded-md px-4 py-2 text-sm`}
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Logout
-                        </a>
-                      )}
+                    {({ active }) => (
+                      <button
+                        onClick={handleLogout}
+                        className={`${
+                          active ? 'bg-accent' : ''
+                        } group flex w-full items-center rounded-md px-4 py-2 text-sm`}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </button>
+                    )}
                   </Menu.Item>      
                 </div>
               </Menu.Items>
