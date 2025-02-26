@@ -28,24 +28,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
     
-    // Update the transaction status
-    const updatedTransaction = await prisma.transaction.update({
+    // Update the loan request status
+    const updatedLoan = await prisma.loanRequest.update({
       where: { id: params.id },
       data: {
-        status: action === 'approve' ? 'COMPLETED' : 'FAILED',
-        failureReason: action === 'reject' ? 'Rejected by admin' : undefined
+        status: action === 'approve' ? 'APPROVED' : 'REJECTED'
       }
     });
     
     return NextResponse.json({ 
       success: true, 
-      message: `Withdrawal ${action === 'approve' ? 'approved' : 'rejected'} successfully`,
-      transaction: updatedTransaction
+      message: `Loan ${action === 'approve' ? 'approved' : 'rejected'} successfully`,
+      loan: updatedLoan
     });
   } catch (error) {
-    console.error('Error updating withdrawal:', error);
+    console.error('Error updating loan:', error);
     return NextResponse.json(
-      { error: 'Failed to update withdrawal' },
+      { error: 'Failed to update loan' },
       { status: 500 }
     );
   }
