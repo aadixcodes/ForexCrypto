@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, DollarSign, Coins, BarChart, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Briefcase, Coins, BarChart, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Order } from "@/app/types/orders";
 import { useAuth } from "@/app/auth-context";
 

@@ -1,19 +1,21 @@
- "use client";
+"use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { WithdrawalRequest } from "@/app/types/transaction";
 import { TransactionStatus } from "@prisma/client";
+import { Loader } from '../../components/ui/loader';
 
 interface WithdrawalModalProps {
   request: WithdrawalRequest;
   isOpen: boolean;
   onClose: () => void;
   onStatusUpdate: (id: string, status: TransactionStatus, remarks?: string) => Promise<void>;
+  userId: string;
 }
 
-export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate }: WithdrawalModalProps) {
+export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate, userId }: WithdrawalModalProps) {
   const [remarks, setRemarks] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,11 +23,29 @@ export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate }: Wi
   const handleStatusUpdate = async (status: TransactionStatus) => {
     setIsLoading(true);
     setError(null);
+
     try {
-      await onStatusUpdate(request.id, status, remarks);
+      const response = await fetch(`/api/admin/withdrawals/${request.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+        },
+        body: JSON.stringify({ 
+          action: status === 'COMPLETED' ? 'approve' : 'reject',
+          remarks,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error);
+      }
+
+      onStatusUpdate(request.id, status, remarks);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status");
+      setError(err instanceof Error ? err.message : 'Failed to update status');
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +147,12 @@ export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate }: Wi
                         Approve
                       </button>
                     </div>
+
+                    {isLoading && (
+                      <div className="col-span-2 flex justify-center">
+                        <Loader />
+                      </div>
+                    )}
                   </>
                 )}
               </div>

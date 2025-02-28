@@ -48,14 +48,15 @@ export default function WithdrawalRequests() {
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: TransactionStatus, remarks?: string) => {
+  const handleStatusUpdate = async (id: string, status: TransactionStatus, remarks?: string, userId?: string) => {
     try {
       const response = await fetch(`/api/admin/withdrawals/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          ...(userId && { "X-User-Id": userId }),
         },
-        body: JSON.stringify({ status, remarks }),
+        body: JSON.stringify({ action: status === 'COMPLETED' ? 'approve' : 'reject', remarks }),
       });
 
       const data = await response.json();
@@ -64,12 +65,12 @@ export default function WithdrawalRequests() {
         setRequests(requests.map(req => 
           req.id === id ? { ...req, status } : req
         ));
-        toast.success(`Withdrawal ${status.toLowerCase()} successfully`);
+        toast.success(`Withdrawal ${status === 'COMPLETED' ? 'approved' : 'rejected'} successfully`);
       } else {
-        throw new Error(data.message);
+        throw new Error(data.error);
       }
     } catch (error) {
-      toast.error("Failed to update withdrawal status");
+      toast.error(`Failed to update withdrawal: ${(error as Error).message}`);
       throw error;
     }
   };
@@ -252,7 +253,8 @@ export default function WithdrawalRequests() {
             setIsActionModalOpen(false);
             setSelectedRequest(null);
           }}
-          onStatusUpdate={handleStatusUpdate}
+          onStatusUpdate={(id, status, remarks) => handleStatusUpdate(id, status, remarks, "hardcoded-user-id")}
+          userId="admin-user-id"
         />
       )}
     </div>
