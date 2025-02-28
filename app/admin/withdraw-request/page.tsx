@@ -1,80 +1,102 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Wallet, Clock, CheckCircle2, XCircle, Banknote, ArrowUpRight, ArrowDownLeft } from "lucide-react";
-
-interface WithdrawalRequest {
-  id: string;
-  user: string;
-  amount: number;
-  method: string;
-  status: 'pending' | 'approved' | 'rejected';
-  date: string;
-  accountDetails: {
-    type: string;
-    number: string;
-  };
-}
+import { 
+  Wallet, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  Banknote, 
+  Eye,
+  ArrowUpRight 
+} from "lucide-react";
+import { WithdrawalRequest } from "@/app/types/transaction";
+import { WithdrawalModal } from "@/app/components/withdrawal-modal";
+import { ViewWithdrawalModal } from "@/app/components/modals/ViewWithdrawalModal";
+import { Button } from "@/components/ui/button";
+import { TransactionStatus } from "@prisma/client";
+import { toast } from "sonner";
 
 export default function WithdrawalRequests() {
-  const [requests, setRequests] = useState<WithdrawalRequest[]>([
-    {
-      id: "1",
-      user: "John Forex",
-      amount: 5000,
-      method: "Bank Transfer",
-      status: "pending",
-      date: "2023-12-15",
-      accountDetails: {
-        type: "Savings Account",
-        number: "**** **** 1234"
+  const [requests, setRequests] = useState<WithdrawalRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequest | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchWithdrawalRequests();
+  }, []);
+
+  const fetchWithdrawalRequests = async () => {
+    try {
+      const response = await fetch("/api/admin/withdrawals");
+      const data = await response.json();
+      
+      if (data.success) {
+        setRequests(data.withdrawals);
+      } else {
+        throw new Error(data.message);
       }
-    },
-    {
-      id: "2",
-      user: "Alice Trader",
-      amount: 7500,
-      method: "Crypto Wallet",
-      status: "pending",
-      date: "2023-12-14",
-      accountDetails: {
-        type: "BTC Wallet",
-        number: "bc1qxy2kg...k7n9"
-      }
-    },
-    {
-      id: "3",
-      user: "Mike Investor",
-      amount: 10000,
-      method: "PayPal",
-      status: "approved",
-      date: "2023-12-13",
-      accountDetails: {
-        type: "Business Account",
-        number: "mike@investor.com"
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch withdrawal requests");
+      toast.error("Failed to fetch withdrawal requests");
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
+
+  const handleStatusUpdate = async (id: string, status: TransactionStatus, remarks?: string, userId?: string) => {
+    try {
+      const response = await fetch(`/api/admin/withdrawals/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(userId && { "X-User-Id": userId }),
+        },
+        body: JSON.stringify({ action: status === 'COMPLETED' ? 'approve' : 'reject', remarks }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setRequests(requests.map(req => 
+          req.id === id ? { ...req, status } : req
+        ));
+        toast.success(`Withdrawal ${status === 'COMPLETED' ? 'approved' : 'rejected'} successfully`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      toast.error(`Failed to update withdrawal: ${(error as Error).message}`);
+      throw error;
+    }
+  };
 
   const stats = [
-    { title: "Total Requests", value: requests.length, icon: <Wallet className="h-5 w-5" /> },
-    { title: "Pending", value: requests.filter(r => r.status === 'pending').length, icon: <Clock className="h-5 w-5" /> },
-    { title: "Total Amount", value: `$${requests.reduce((sum, r) => sum + r.amount, 0).toLocaleString()}`, icon: <Banknote className="h-5 w-5" /> },
-    { title: "Completed", value: requests.filter(r => r.status === 'approved').length, icon: <CheckCircle2 className="h-5 w-5" /> }
+    { 
+      title: "Total Requests", 
+      value: requests.length, 
+      icon: <Wallet className="h-5 w-5" /> 
+    },
+    { 
+      title: "Pending", 
+      value: requests.filter(r => r.status === "PENDING").length, 
+      icon: <Clock className="h-5 w-5" /> 
+    },
+    { 
+      title: "Total Amount", 
+      value: `₹${requests.reduce((sum, r) => sum + r.amount, 0).toLocaleString()}`, 
+      icon: <Banknote className="h-5 w-5" /> 
+    },
+    { 
+      title: "Completed", 
+      value: requests.filter(r => r.status === "COMPLETED").length, 
+      icon: <CheckCircle2 className="h-5 w-5" /> 
+    }
   ];
-
-  const handleApprove = (id: string) => {
-    setRequests(requests.map(req => 
-      req.id === id ? { ...req, status: 'approved' } : req
-    ));
-  };
-
-  const handleReject = (id: string) => {
-    setRequests(requests.map(req => 
-      req.id === id ? { ...req, status: 'rejected' } : req
-    ));
-  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -118,68 +140,123 @@ export default function WithdrawalRequests() {
         <div className="p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <ArrowUpRight className="h-5 w-5 text-primary" />
-            Pending Withdrawals
+            Withdrawal Requests
           </h2>
 
-          <div className="space-y-4">
-            {requests.map((request) => (
-              <motion.div
-                key={request.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center p-4 border rounded-lg hover:bg-accent/10 transition-colors"
-              >
-                <div>
-                  <p className="font-medium">{request.user}</p>
-                  <p className="text-sm text-muted-foreground">{request.date}</p>
-                </div>
-                
-                <div>
-                  <p className="text-lg font-semibold">${request.amount.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">{request.method}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Type</p>
-                  <p className="font-medium">{request.accountDetails.type}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Number</p>
-                  <p className="font-medium">{request.accountDetails.number}</p>
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  <div className={`text-sm ${
-                    request.status === 'approved' ? 'text-green-400' :
-                    request.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'
-                  }`}>
-                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+          {isLoading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">{error}</div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No withdrawal requests found
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {requests.map((request) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4 border rounded-lg hover:bg-accent/10 transition-colors"
+                >
+                  <div className="col-span-2">
+                    <p className="font-medium">{request.user.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(request.timestamp).toLocaleDateString()}
+                    </p>
                   </div>
-                  {request.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleApprove(request.id)}
-                        className="px-3 py-1.5 rounded-lg bg-green-400/10 text-green-400 hover:bg-green-400/20 flex items-center gap-1"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleReject(request.id)}
-                        className="px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 flex items-center gap-1"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Reject
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  
+                  <div>
+                    <p className="text-lg font-semibold">₹{request.amount.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">{request.transactionId}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-muted-foreground">Bank</p>
+                    <p className="font-medium">{request.metadata?.bankName}</p>
+                  </div>
+
+                  <div>
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                      request.status === "COMPLETED" ? "bg-green-500/10 text-green-500" :
+                      request.status === "FAILED" ? "bg-red-500/10 text-red-500" :
+                      "bg-yellow-500/10 text-yellow-500"
+                    }`}>
+                      {request.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setIsViewModalOpen(true);
+                      }}
+                    >
+                      <Eye className="h-5 w-5" />
+                    </Button>
+                    {request.status === "PENDING" && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-green-500 hover:text-green-600"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setIsActionModalOpen(true);
+                          }}
+                        >
+                          <CheckCircle2 className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-600"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setIsActionModalOpen(true);
+                          }}
+                        >
+                          <XCircle className="h-5 w-5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
+
+      {/* View Modal */}
+      {selectedRequest && isViewModalOpen && (
+        <ViewWithdrawalModal
+          withdrawal={selectedRequest}
+          open={isViewModalOpen}
+          onOpenChange={(open) => {
+            setIsViewModalOpen(open);
+            if (!open) setSelectedRequest(null);
+          }}
+        />
+      )}
+
+      {/* Action Modal */}
+      {selectedRequest && isActionModalOpen && (
+        <WithdrawalModal
+          request={selectedRequest}
+          isOpen={isActionModalOpen}
+          onClose={() => {
+            setIsActionModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          onStatusUpdate={(id, status, remarks) => handleStatusUpdate(id, status, remarks, "hardcoded-user-id")}
+          userId="admin-user-id"
+        />
+      )}
     </div>
   );
 }

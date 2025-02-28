@@ -1,59 +1,107 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, UserPlus, UserCheck, UserX, ArrowUpRight, Mail, Shield, BarChart, Search } from "lucide-react";
+import { UserDetailsModal } from "@/app/components/admin/UserDetailsModal";
+import { User, Transaction, OrderHistory, LoanRequest } from "@prisma/client";
+import Link from 'next/link'
+import { format } from 'date-fns'
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'trader' | 'investor';
-  status: 'active' | 'suspended' | 'pending';
-  registrationDate: string;
-  lastLogin: string;
-  verified: boolean;
+interface ExtendedUser extends User {
+  transactions: Transaction[];
+  orders: OrderHistory[];
+  loanRequest: LoanRequest | null;
+}
+
+interface UserStats {
+  totalUsers: number;
+  newUsers: number;
+  activeUsers: number;
+  suspendedUsers: number;
 }
 
 export default function TotalUsers() {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      name: "John Forex",
-      email: "john@forex.com",
-      role: "trader",
-      status: "active",
-      registrationDate: "2023-11-15",
-      lastLogin: "2023-12-15 09:30",
-      verified: true
-    },
-    {
-      id: "2",
-      name: "Alice Trader",
-      email: "alice@trader.com",
-      role: "investor",
-      status: "active",
-      registrationDate: "2023-12-01",
-      lastLogin: "2023-12-15 14:45",
-      verified: true
-    },
-    {
-      id: "3",
-      name: "Admin User",
-      email: "admin@platform.com",
-      role: "admin",
-      status: "active",
-      registrationDate: "2023-10-01",
-      lastLogin: "2023-12-15 16:20",
-      verified: true
-    }
-  ]);
+  const [users, setUsers] = useState<ExtendedUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<UserStats>({
+    totalUsers: 0,
+    newUsers: 0,
+    activeUsers: 0,
+    suspendedUsers: 0
+  });
 
-  const stats = [
-    { title: "Total Users", value: users.length, icon: <Users className="h-5 w-5" />, change: "+24%", trend: "positive" },
-    { title: "New Users", value: "12", icon: <UserPlus className="h-5 w-5" />, change: "+5%", trend: "positive" },
-    { title: "Active Users", value: "89%", icon: <UserCheck className="h-5 w-5" />, change: "-2%", trend: "negative" },
-    { title: "Suspended", value: "3", icon: <UserX className="h-5 w-5" />, change: "+1", trend: "negative" }
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/admin/users');
+        const data = await response.json();
+        setUsers(data);
+        
+        // Calculate stats
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30));
+        
+        const newUsersCount = data.filter((user: User) => 
+          new Date(user.createdAt) > thirtyDaysAgo
+        ).length;
+        
+        const activeUsersCount = data.filter((user: ExtendedUser) => 
+          user.isVerified
+        ).length;
+        
+        const suspendedUsersCount = data.filter((user: ExtendedUser) => 
+          !user.isVerified
+        ).length;
+
+        setStats({
+          totalUsers: data.length,
+          newUsers: newUsersCount,
+          activeUsers: activeUsersCount,
+          suspendedUsers: suspendedUsersCount
+        });
+
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const statsData = [
+    { 
+      title: "Total Users", 
+      value: stats.totalUsers, 
+      icon: <Users className="h-5 w-5" />, 
+      change: `${((stats.totalUsers - stats.newUsers) / stats.totalUsers * 100).toFixed(1)}%`, 
+      trend: "positive" 
+    },
+    { 
+      title: "New Users", 
+      value: stats.newUsers, 
+      icon: <UserPlus className="h-5 w-5" />, 
+      change: `+${stats.newUsers}`, 
+      trend: "positive" 
+    },
+    { 
+      title: "Active Users", 
+      value: `${((stats.activeUsers / stats.totalUsers) * 100).toFixed(1)}%`, 
+      icon: <UserCheck className="h-5 w-5" />, 
+      change: `${stats.activeUsers} users`, 
+      trend: "positive" 
+    },
+    { 
+      title: "Suspended", 
+      value: stats.suspendedUsers, 
+      icon: <UserX className="h-5 w-5" />, 
+      change: `${stats.suspendedUsers} users`, 
+      trend: "negative" 
+    }
   ];
 
   const getRoleColor = (role: string) => {
@@ -64,6 +112,21 @@ export default function TotalUsers() {
       default: return 'text-muted-foreground';
     }
   };
+
+  const handleViewUser = (user: ExtendedUser) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleEditUser = async (user: ExtendedUser) => {
+    // For now, just view the user. You can implement edit functionality later
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -77,7 +140,7 @@ export default function TotalUsers() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {statsData.map((stat, index) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}
@@ -155,39 +218,45 @@ export default function TotalUsers() {
                 </div>
 
                 {/* User Details */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Role</span>
-                    <span className={`text-sm font-medium ${getRoleColor(user.role)}`}>
-                      {user.role}
-                    </span>
-                  </div>
+                <div className="space-y-2 z-50">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Status</span>
                     <span className={`text-sm ${
-                      user.status === 'active' ? 'text-green-400' :
-                      user.status === 'suspended' ? 'text-red-400' : 'text-yellow-400'
+                      user.isVerified ? 'text-green-400' : 'text-yellow-400'
                     }`}>
-                      {user.status}
+                      {user.isVerified ? 'Verified' : 'Pending'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Verified</span>
-                    <span className={`text-sm ${
-                      user.verified ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      {user.verified ? 'Verified' : 'Pending'}
+                    <span className="text-sm text-muted-foreground">Joined</span>
+                    <span className="text-sm">
+                      {format(new Date(user.createdAt), 'PP')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Last Transaction</span>
+                    <span className="text-sm">
+                      {user.transactions && user.transactions.length > 0 
+                        ? format(new Date(user.transactions[0].timestamp), 'PP')
+                        : 'No transactions'
+                      }
                     </span>
                   </div>
                 </div>
 
                 {/* Action Menu */}
-                <div className="mt-4 pt-4 border-t">
+                <div className="mt-4 pt-4 border-t relative z-50">
                   <div className="flex justify-end gap-2">
-                    <button className="text-xs px-2 py-1 rounded-md bg-accent hover:bg-accent/80">
+                    <button 
+                      onClick={() => window.location.href = `/admin/users/${user.id}`}
+                      className="text-xs px-2 py-1 rounded-md bg-accent hover:bg-accent/80 transition-colors"
+                    >
                       View Profile
                     </button>
-                    <button className="text-xs px-2 py-1 rounded-md bg-accent hover:bg-accent/80">
+                    <button 
+                      onClick={() => window.location.href = `/admin/users/${user.id}/edit`}
+                      className="text-xs px-2 py-1 rounded-md bg-accent hover:bg-accent/80 transition-colors"
+                    >
                       Edit
                     </button>
                   </div>
@@ -197,6 +266,16 @@ export default function TotalUsers() {
           </div>
         </div>
       </motion.div>
+
+      {/* Add the modal */}
+      <UserDetailsModal
+        user={selectedUser}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedUser(null);
+        }}
+      />
     </div>
   );
 }

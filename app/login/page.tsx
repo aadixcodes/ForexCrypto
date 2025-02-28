@@ -1,31 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ArrowRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/auth-context";
 
 function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    password: false,
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { setAuth, isLoading, email } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Pre-fill form from cookies instead of redirecting
+  useEffect(() => {
+    if (!isLoading && email) {
+      setUsername(email);
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (username === "aditya@patel" && password === "patel@123") {
-      router.push("/dashboard");
-    } else if (username === "admin@patel" && password === "admin@123") {
-      router.push("/admin");
-    } else {
-      setError("Incorrect username or password. Please try again.");
+
+    try {
+      const response = await fetch("/api/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (!data.user.isVerified) {
+          router.push("/account-not-verified");
+          return;
+        }
+        
+        // Include name when setting auth
+        setAuth(data.user.id, data.user.email, data.user.name, data.user.role);
+        
+        if (data.user.role === 'admin') {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        setError(data.error || "An error occurred. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setError("An unexpected error occurred. Please try again.");
     }
   };
+
+  const togglePasswordVisibility = (field: 'password') => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="relative min-h-[100vh] flex items-center justify-center overflow-hidden pt-14">
@@ -70,7 +118,7 @@ function LoginPage() {
                 </label>
                 <div className="relative">
                   <Input
-                    type={showPassword ? "text" : "password"}
+                    type={showPasswords.password ? "text" : "password"}
                     placeholder="Enter your password"
                     className="bg-background/70 border-green-500/20 focus:border-green-500/50 focus:ring-green-500/30 pr-10"
                     value={password}
@@ -78,13 +126,13 @@ function LoginPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => togglePasswordVisibility('password')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
+                    {showPasswords.password ? (
+                      <EyeOff size={20} />
                     ) : (
-                      <Eye className="h-5 w-5" />
+                      <Eye size={20} />
                     )}
                   </button>
                 </div>
@@ -108,7 +156,7 @@ function LoginPage() {
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/signup"
                 className="text-primary hover:text-green-600 transition-colors font-medium"

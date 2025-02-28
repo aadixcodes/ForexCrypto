@@ -1,45 +1,102 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { User, Mail, Phone, MapPin, Calendar, Briefcase, Edit, X, Lock, Banknote, Users } from "lucide-react";
+import { useAuth } from "@/app/auth-context";
+
+interface UserData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  gender: string;
+  mobile: string;
+  aadhar: string;
+  dob: string;
+  address: string;
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  ifsc: string;
+  pan: string;
+  nomineeName: string;
+  nomineeRelation: string;
+  nomineeDob: string;
+}
 
 export default function AccountSetting() {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { userId } = useAuth();
   
-  // Sample user data - replace with actual data from your auth provider
-  const [userData, setUserData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john@example.com",
-    username: "johndoe",
-    gender: "Male",
-    mobile: "+1 234 567 890",
-    aadhar: "1234 5678 9012",
-    dob: "1990-01-01",
-    address: "123 Trade Street",
-    bankName: "Global Forex Bank",
-    accountHolder: "John Doe",
-    accountNumber: "**** **** 1234",
-    ifsc: "GLB0000123",
-    pan: "ABCDE1234F",
-    nomineeName: "Jane Doe",
-    nomineeRelation: "Spouse",
-    nomineeDob: "1992-05-15"
-  });
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [formData, setFormData] = useState<UserData | null>(null);
 
-  const [formData, setFormData] = useState({ ...userData });
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/user');
+        if (!response.ok) throw new Error('Failed to fetch user data');
+        
+        const data = await response.json();
+        // Convert date to YYYY-MM-DD format for input
+        data.dob = new Date(data.dob).toISOString().split('T')[0];
+        data.nomineeDob = new Date(data.nomineeDob).toISOString().split('T')[0];
+        
+        setUserData(data);
+        setFormData(data);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setIsLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchUserData();
+    }
+  }, [userId]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
-    if (!isEditing) setFormData({ ...userData });
+    if (!isEditing && userData) setFormData({ ...userData });
   };
 
-  const handleSave = (e: FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    setUserData({ ...formData });
-    setIsEditing(false);
+    if (!formData) return;
+
+    try {
+      const response = await fetch('/api/user', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to update user data');
+
+      const updatedData = await response.json();
+      // Convert dates to YYYY-MM-DD format for input
+      updatedData.dob = new Date(updatedData.dob).toISOString().split('T')[0];
+      updatedData.nomineeDob = new Date(updatedData.nomineeDob).toISOString().split('T')[0];
+      
+      setUserData(updatedData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    }
   };
+
+  if (isLoading) {
+    return <div className="p-4">Loading...</div>;
+  }
+
+  if (!userData || !formData) {
+    return <div className="p-4">Error loading user data</div>;
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
