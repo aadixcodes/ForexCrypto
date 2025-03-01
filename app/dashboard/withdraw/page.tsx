@@ -1,26 +1,60 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, FormEvent } from "react";
-import { Banknote, CheckCircle, User, Wallet } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle } from "lucide-react";
+import { useAuth } from "@/app/auth-context";
 
 export default function WithdrawPage() {
-  const [amount, setAmount] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { userId } = useAuth();
 
-  // Prefilled bank details
-  const bankDetails = {
-    bankName: "Global International Bank",
-    accountNumber: "**** **** 1234",
-    accountHolder: "John Doe",
-    ifscCode: "GLOBUS000123"
-  };
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    // Add withdrawal processing logic here
+    setError(null);
+    setIsLoading(true);
+
+    if (!userId) {
+      setError("You must be logged in to make a withdrawal");
+      setIsLoading(false);
+      return;
+    }
+
+    const withdrawalAmount = parseFloat(amount);
+    if (isNaN(withdrawalAmount) || withdrawalAmount < 10) {
+      setError("Please enter a valid amount (minimum ₹10)");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/create-withdrawal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: withdrawalAmount,
+          userId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsSubmitted(true);
+      } else {
+        throw new Error(data.message || "Withdrawal request failed");
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Withdrawal failed. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,86 +71,39 @@ export default function WithdrawPage() {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm max-w-3xl mx-auto"
+          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm max-w-2xl mx-auto"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Bank Details Section */}
             <div>
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Banknote className="h-5 w-5 text-primary" />
-                Bank Account Details
-              </h2>
-              <div className="space-y-3 bg-accent/10 rounded-lg p-4">
-                <div>
-                  <label className="text-sm text-muted-foreground">Bank Name</label>
-                  <div className="font-medium break-words">{bankDetails.bankName}</div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground">Account Number</label>
-                    <div className="font-medium break-all">{bankDetails.accountNumber}</div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">IFSC Code</label>
-                    <div className="font-medium break-all">{bankDetails.ifscCode}</div>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Account Holder Name</label>
-                  <div className="font-medium break-words">{bankDetails.accountHolder}</div>
-                </div>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
+                Withdrawal Amount
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full bg-background border rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Enter amount"
+                  min="10"
+                  required
+                />
+                <span className="absolute right-4 top-3.5 text-muted-foreground">
+                  ₹
+                </span>
               </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-500">{error}</p>
+              )}
             </div>
 
-            {/* Withdrawal Details Section */}
-            <div>
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                Your Details
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-muted-foreground mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-background border rounded-lg py-2 px-4 focus:ring-2 focus:ring-primary"
-                    placeholder="Enter name as per bank account"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-muted-foreground mb-2">
-                    Withdrawal Amount
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="w-full bg-background border rounded-lg py-2 px-4 pr-12 focus:ring-2 focus:ring-primary"
-                      placeholder="Enter amount to withdraw"
-                      min="100"
-                      required
-                    />
-                    <span className="absolute right-4 top-2.5 text-muted-foreground">USD</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-center pt-6">
-              <button
-                type="submit"
-                className="bg-primary text-primary-foreground px-8 py-3 rounded-lg hover:bg-primary/90 transition-colors w-full sm:w-auto"
-              >
-                Submit Request
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Processing..." : "Confirm Withdrawal"}
+            </button>
           </form>
         </motion.div>
       ) : (
@@ -126,20 +113,18 @@ export default function WithdrawPage() {
           className="bg-background/80 backdrop-blur-lg rounded-xl border p-8 shadow-sm max-w-md mx-auto text-center"
         >
           <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Withdrawal Request Received</h2>
+          <h2 className="text-2xl font-bold mb-2">Withdrawal Requested!</h2>
           <p className="text-muted-foreground mb-4">
-            Your withdrawal of ${amount} has been successfully submitted.
-            Funds will be transferred within 3-5 business days.
+            ${amount} will be transferred to your registered bank account
           </p>
           <button
             onClick={() => {
-              setName("");
               setAmount("");
               setIsSubmitted(false);
             }}
-            className="text-primary hover:text-primary/80 font-medium"
+            className="text-primary hover:text-primary/80"
           >
-            New Withdrawal
+            Make Another Withdrawal
           </button>
         </motion.div>
       )}
