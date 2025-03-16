@@ -9,7 +9,9 @@ import {
   XCircle, 
   Banknote, 
   Eye,
-  ArrowUpRight 
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { WithdrawalRequest } from "@/app/types/transaction";
 import { WithdrawalModal } from "@/app/components/withdrawal-modal";
@@ -25,6 +27,10 @@ export default function WithdrawalRequests() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 6;
 
   useEffect(() => {
     fetchWithdrawalRequests();
@@ -72,6 +78,25 @@ export default function WithdrawalRequests() {
     } catch (error) {
       toast.error(`Failed to update withdrawal: ${(error as Error).message}`);
       throw error;
+    }
+  };
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(requests.length / requestsPerPage);
+  const indexOfLastRequest = currentPage * requestsPerPage;
+  const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+  const currentRequests = requests.slice(indexOfFirstRequest, indexOfLastRequest);
+
+  // Pagination controls
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -152,82 +177,115 @@ export default function WithdrawalRequests() {
               No withdrawal requests found
             </div>
           ) : (
-            <div className="space-y-4">
-              {requests.map((request) => (
-                <motion.div
-                  key={request.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4 border rounded-lg hover:bg-accent/10 transition-colors"
-                >
-                  <div className="col-span-2">
-                    <p className="font-medium">{request.user.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(request.timestamp).toLocaleDateString()}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-lg font-semibold">₹{request.amount.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">{request.transactionId}</p>
-                  </div>
+            <>
+              <div className="space-y-4">
+                {currentRequests.map((request) => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4 border rounded-lg hover:bg-accent/10 transition-colors"
+                  >
+                    <div className="col-span-2">
+                      <p className="font-medium">{request.user.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(request.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-lg font-semibold">₹{request.amount.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">{request.transactionId}</p>
+                    </div>
 
-                  <div>
-                    <p className="text-sm text-muted-foreground">Bank</p>
-                    <p className="font-medium">{request.metadata?.bankName}</p>
-                  </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Bank</p>
+                      <p className="font-medium">{request.metadata?.bankName}</p>
+                    </div>
 
-                  <div>
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                      request.status === "COMPLETED" ? "bg-green-500/10 text-green-500" :
-                      request.status === "FAILED" ? "bg-red-500/10 text-red-500" :
-                      "bg-yellow-500/10 text-yellow-500"
-                    }`}>
-                      {request.status}
-                    </span>
-                  </div>
+                    <div>
+                      <span className={`px-3 py-1 rounded-full text-sm ${
+                        request.status === "COMPLETED" ? "bg-green-500/10 text-green-500" :
+                        request.status === "FAILED" ? "bg-red-500/10 text-red-500" :
+                        "bg-yellow-500/10 text-yellow-500"
+                      }`}>
+                        {request.status}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center gap-2 justify-end">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setIsViewModalOpen(true);
+                        }}
+                      >
+                        <Eye className="h-5 w-5" />
+                      </Button>
+                      {request.status === "PENDING" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-green-500 hover:text-green-600"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setIsActionModalOpen(true);
+                            }}
+                          >
+                            <CheckCircle2 className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-600"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setIsActionModalOpen(true);
+                            }}
+                          >
+                            <XCircle className="h-5 w-5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-6 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {indexOfFirstRequest + 1}-{Math.min(indexOfLastRequest, requests.length)} of {requests.length} requests
+                  </div>
+                  <div className="flex gap-2">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setIsViewModalOpen(true);
-                      }}
+                      variant="outline"
+                      size="sm"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-1"
                     >
-                      <Eye className="h-5 w-5" />
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
                     </Button>
-                    {request.status === "PENDING" && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-green-500 hover:text-green-600"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setIsActionModalOpen(true);
-                          }}
-                        >
-                          <CheckCircle2 className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-600"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setIsActionModalOpen(true);
-                          }}
-                        >
-                          <XCircle className="h-5 w-5" />
-                        </Button>
-                      </>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </motion.div>

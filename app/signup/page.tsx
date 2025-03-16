@@ -9,12 +9,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from '../auth-context';
 import { useRouter } from 'next/navigation';
+import LoadingOverlay from "@/components/ui/loading-overlay";
 
 const SignupForm = () => {
   const [showPasswords, setShowPasswords] = useState({
     password: false,
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -41,6 +43,7 @@ const SignupForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
       const response = await fetch('/api/user/signup', {
@@ -63,6 +66,8 @@ const SignupForm = () => {
     } catch (error) {
       console.error('Error:', error);
       // Handle error state
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,6 +87,8 @@ const SignupForm = () => {
 
   return (
     <div className="relative min-h-[calc(100vh-80px)] flex items-center justify-center overflow-hidden pt-24">
+      {isSubmitting && <LoadingOverlay message="Creating your account..." />}
+      
       {/* Trading Graph Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]" />
@@ -293,6 +300,7 @@ const SignupForm = () => {
                 <Button
                   type="submit"
                   className="w-full sm:w-auto bg-green-500 hover:bg-green-600 font-semibold px-8 py-6 order-1 sm:order-2"
+                  disabled={isSubmitting || !agreeTerms}
                 >
                   Create Account
                   <ArrowRight className="ml-2 h-4 w-4" />

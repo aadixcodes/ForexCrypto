@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { WithdrawalRequest } from "@/app/types/transaction";
 import { TransactionStatus } from "@prisma/client";
-import { Loader } from '../../components/ui/loader';
+import LoadingButton from "@/app/components/ui/loading-button";
 
 interface WithdrawalModalProps {
   request: WithdrawalRequest;
@@ -54,12 +54,12 @@ export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate, user
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-background rounded-xl shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-background rounded-xl shadow-lg max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6 space-y-6">
               <div className="flex justify-between items-center">
@@ -69,7 +69,7 @@ export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate, user
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">User</p>
                   <p className="font-medium">{request.user.name}</p>
@@ -130,29 +130,27 @@ export function WithdrawalModal({ request, isOpen, onClose, onStatusUpdate, user
                     )}
 
                     <div className="col-span-2 flex justify-end gap-3">
-                      <button
+                      <LoadingButton
                         onClick={() => handleStatusUpdate("FAILED")}
-                        disabled={isLoading}
-                        className="px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center gap-2"
+                        isLoading={isLoading}
+                        variant="destructive"
+                        className="flex items-center gap-2"
+                        loadingMessage="Rejecting withdrawal..."
                       >
                         <XCircle className="h-4 w-4" />
                         Reject
-                      </button>
-                      <button
+                      </LoadingButton>
+                      <LoadingButton
                         onClick={() => handleStatusUpdate("COMPLETED")}
-                        disabled={isLoading}
-                        className="px-4 py-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 flex items-center gap-2"
+                        isLoading={isLoading}
+                        variant="default"
+                        className="bg-green-500 hover:bg-green-600 flex items-center gap-2"
+                        loadingMessage="Approving withdrawal..."
                       >
                         <CheckCircle2 className="h-4 w-4" />
                         Approve
-                      </button>
+                      </LoadingButton>
                     </div>
-
-                    {isLoading && (
-                      <div className="col-span-2 flex justify-center">
-                        <Loader />
-                      </div>
-                    )}
                   </>
                 )}
               </div>

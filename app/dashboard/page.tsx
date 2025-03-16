@@ -196,13 +196,13 @@ export default function DashboardPage() {
             {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button 
-            onClick={() => router.push('/deposit')}
+            onClick={() => router.push('/dashboard/deposit')}
             className="bg-green-500 hover:bg-green-600"
           >
             Deposit
           </Button>
           <Button 
-            onClick={() => router.push('/withdraw')}
+            onClick={() => router.push('/dashboard/withdraw')}
             className="bg-primary hover:bg-primary/90"
           >
             Withdraw

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image"; // Make sure to import Next.js Image component
+import Link from 'next/link'
 
 export function HeroSection() {
   return (
@@ -30,11 +31,12 @@ export function HeroSection() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <Button size="lg" className="bg-green-500 hover:bg-green-600">
-                Start Trading Now
+                 <Link href="/login">Start Trading Now</Link>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button size="lg" variant="outline">
-                View Live Rates
+                 <Link href="/live-charts">View Live Rates</Link>
+                
               </Button>
             </div>
           </div>

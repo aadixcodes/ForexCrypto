@@ -3,7 +3,7 @@
 import { useAuth } from "@/app/auth-context";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import LoadingButton from "@/app/components/ui/loading-button";
 
 export function LogoutButton() {
   const { logout } = useAuth();
@@ -25,14 +25,15 @@ export function LogoutButton() {
   };
 
   return (
-    <Button
+    <LoadingButton
       variant="ghost"
       size="sm"
       onClick={handleLogout}
       className="text-muted-foreground hover:text-foreground"
+      loadingMessage="Logging out..."
     >
       <LogOut className="h-4 w-4 mr-2" />
       Logout
-    </Button>
+    </LoadingButton>
   );
 } 
