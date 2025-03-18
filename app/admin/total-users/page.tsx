@@ -2,11 +2,15 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Users, UserPlus, UserCheck, UserX, ArrowUpRight, Mail, Shield, BarChart, Search } from "lucide-react";
+import { Users, UserPlus, UserCheck, UserX, ArrowUpRight, Mail, Shield, BarChart, Search, Trash2 } from "lucide-react";
 import { UserDetailsModal } from "@/app/components/admin/UserDetailsModal";
 import { User, Transaction, OrderHistory, LoanRequest } from "@prisma/client";
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { Dialog } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import LoadingOverlay from "@/components/ui/loading-overlay";
 
 interface ExtendedUser extends User {
   transactions: Transaction[];
@@ -26,6 +30,8 @@ export default function TotalUsers() {
   const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<ExtendedUser | null>(null);
   const [stats, setStats] = useState<UserStats>({
     totalUsers: 0,
     newUsers: 0,
@@ -34,44 +40,46 @@ export default function TotalUsers() {
   });
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('/api/admin/users');
-        const data = await response.json();
-        setUsers(data);
-        
-        // Calculate stats
-        const today = new Date();
-        const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30));
-        
-        const newUsersCount = data.filter((user: User) => 
-          new Date(user.createdAt) > thirtyDaysAgo
-        ).length;
-        
-        const activeUsersCount = data.filter((user: ExtendedUser) => 
-          user.isVerified
-        ).length;
-        
-        const suspendedUsersCount = data.filter((user: ExtendedUser) => 
-          !user.isVerified
-        ).length;
-
-        setStats({
-          totalUsers: data.length,
-          newUsers: newUsersCount,
-          activeUsers: activeUsersCount,
-          suspendedUsers: suspendedUsersCount
-        });
-
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/admin/users');
+      const data = await response.json();
+      setUsers(data);
+      
+      // Calculate stats
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30));
+      
+      const newUsersCount = data.filter((user: User) => 
+        new Date(user.createdAt) > thirtyDaysAgo
+      ).length;
+      
+      const activeUsersCount = data.filter((user: ExtendedUser) => 
+        user.isVerified
+      ).length;
+      
+      const suspendedUsersCount = data.filter((user: ExtendedUser) => 
+        !user.isVerified
+      ).length;
+
+      setStats({
+        totalUsers: data.length,
+        newUsers: newUsersCount,
+        activeUsers: activeUsersCount,
+        suspendedUsers: suspendedUsersCount
+      });
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error("Failed to fetch users");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const statsData = [
     { 
@@ -124,12 +132,40 @@ export default function TotalUsers() {
     setIsModalOpen(true);
   };
 
-  if (isLoading) {
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete user");
+      }
+      
+      toast.success('User successfully deleted');
+      await fetchUsers();
+      setIsDeleteModalOpen(false);
+      setDeleteUser(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete user';
+      toast.error(message);
+      console.error('Delete user error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading && users.length === 0) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {isLoading && <LoadingOverlay message="Processing user data..." />}
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -259,6 +295,16 @@ export default function TotalUsers() {
                     >
                       Edit
                     </button>
+                    <button 
+                      onClick={() => {
+                        setDeleteUser(user);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="text-xs px-2 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors flex items-center gap-1"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -266,6 +312,35 @@ export default function TotalUsers() {
           </div>
         </div>
       </motion.div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog 
+        open={isDeleteModalOpen} 
+        onOpenChange={(open) => {
+          setIsDeleteModalOpen(open);
+          if (!open) setDeleteUser(null);
+        }}
+      >
+        {deleteUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-background rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
+              <p className="mb-4">Are you sure you want to delete {deleteUser.name}? This action cannot be undone.</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDeleteUser(deleteUser.id)}
+                >
+                  Delete User
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Dialog>
 
       {/* Add the modal */}
       <UserDetailsModal

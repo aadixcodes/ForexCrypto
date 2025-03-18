@@ -107,13 +107,21 @@ export default function NewUserRequests() {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error();
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete user");
+      }
+      
       toast.success('User successfully deleted');
       await fetchUsers();
       setIsDeleteModalOpen(false);
       setDeleteUser(null);
     } catch (error) {
-      toast.error('Failed to delete user');
+      const message = error instanceof Error ? error.message : 'Failed to delete user';
+      toast.error(message);
+      console.error('Delete user error:', error);
     } finally {
       setIsLoading(false);
     }
