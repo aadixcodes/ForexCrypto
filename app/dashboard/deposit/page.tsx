@@ -1,118 +1,69 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { QrCode, CreditCard, Banknote, Wallet, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle, QrCode } from "lucide-react";
 import { useAuth } from "@/app/auth-context";
-
-// Define types
-type PaymentMethod = {
-  id: string;
-  name: string;
-  icon: JSX.Element;
-};
-
-interface RazorpayResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
+import Image from "next/image";
+import LoadingOverlay from "@/components/ui/loading-overlay";
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState("card");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const { userId } = useAuth();
 
-  const paymentMethods: PaymentMethod[] = [
-    { id: "card", name: "Credit Card", icon: <CreditCard className="h-5 w-5" /> },
-    { id: "bank", name: "Bank Transfer", icon: <Banknote className="h-5 w-5" /> },
-    { id: "wallet", name: "E-Wallet", icon: <Wallet className="h-5 w-5" /> },
-  ];
+  const generateQRCode = () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      return;
+    }
 
-  const initializeRazorpay = async () => {
-    return new Promise<void>((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve();
-      document.body.appendChild(script);
-    });
+    const upiID = "developer.aditya09@oksbi"; // Your UPI ID
+    const businessName = "Astex"; // Your Business Name
+    const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR`;
+    
+    const qrAPI = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+    setQrCodeUrl(qrAPI);
   };
+
+  // Generate QR code when amount changes
+  useEffect(() => {
+    if (amount && parseFloat(amount) > 0) {
+      generateQRCode();
+    }
+  }, [amount]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Initialize Razorpay
-      await initializeRazorpay();
-
-      // Create order
-      const response = await fetch("/api/create-order", {
+      // Create deposit request
+      const response = await fetch("/api/create-deposit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ 
-          amount: parseFloat(amount) * 100,
-          userId
+          amount: parseFloat(amount),
+          userId,
+          paymentMethod: "UPI"
         }),
       });
 
       const data = await response.json();
-
-      // Configure Razorpay
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: parseFloat(amount) * 100,
-        currency: "INR",
-        name: "Your Company Name",
-        description: "Deposit Transaction",
-        order_id: data.orderId,
-        handler: async function (response: RazorpayResponse) {
-          try {
-            // Verify payment
-            const verificationResponse = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                amount: parseFloat(amount),
-                userId
-              }),
-            });
-
-            const verificationData = await verificationResponse.json();
-
-            if (verificationData.success) {
-              setIsSubmitted(true);
-            } else {
-              throw new Error("Payment verification failed");
-            }
-          } catch (error) {
-            console.error("Payment verification failed:", error);
-            alert("Payment verification failed. Please contact support.");
-          }
-        },
-        prefill: {
-          name: "User Name",
-          email: "user@example.com",
-        },
-        theme: {
-          color: "#0066FF",
-        },
-      };
-
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
+      
+      if (data.success) {
+        setTransactionId(data.transactionId);
+        setIsSubmitted(true);
+      } else {
+        throw new Error(data.message || "Failed to submit deposit request");
+      }
     } catch (error) {
-      console.error("Payment initialization failed:", error);
-      alert("Payment initialization failed. Please try again.");
+      console.error("Deposit request failed:", error);
+      alert("Failed to submit deposit request. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +71,8 @@ export default function DepositPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {isLoading && <LoadingOverlay message="Processing deposit request..." />}
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -154,99 +107,47 @@ export default function DepositPage() {
               </div>
             </div>
 
-            {/* Payment Methods */}
-            <div  className="hidden">
-              <label className="block text-sm font-medium text-muted-foreground mb-3">
-                Payment Method
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {paymentMethods.map((method) => (
-                  <button
-                    key={method.id}
-                    type="button"
-                    onClick={() => setSelectedMethod(method.id)}
-                    className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${
-                      selectedMethod === method.id
-                        ? "border-primary bg-primary/10"
-                        : "hover:border-primary/30"
-                    }`}
-                  >
-                    {method.icon}
-                    <span className="text-sm">{method.name}</span>
-                  </button>
-                ))}
+            {/* UPI QR Code */}
+            <div className="flex flex-col items-center space-y-4 p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <QrCode className="h-5 w-5 text-primary" />
+                <h3 className="font-medium text-center">Scan QR Code to Pay</h3>
               </div>
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Use any UPI app to scan this code and make payment
+              </p>
+              {qrCodeUrl ? (
+                <div className="bg-white p-4 rounded-lg mx-auto">
+                  <Image 
+                    src={qrCodeUrl} 
+                    alt="UPI QR Code" 
+                    width={200} 
+                    height={200} 
+                    className="mx-auto"
+                  />
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Enter a valid amount to generate QR code
+                </div>
+              )}
+              <div className="text-sm space-y-1 w-full">
+                <p><span className="font-medium">UPI ID:</span> developer.aditya09@oksbi</p>
+                <p><span className="font-medium">Merchant:</span> Astex</p>
+                <p><span className="font-medium">Amount:</span> ₹{amount || "0"}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                After payment, click &quot;Submit Deposit Request&quot; to record your transaction.
+              </p>
             </div>
 
-            {/* Payment Details */}
-            <div className="space-y-4 hidden">
-              {selectedMethod === "qr" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center space-y-4"
-                >
-                  <div className="bg-white p-4 rounded-lg">
-                    {/* Replace with your actual QR code */}
-                    <QrCode className="h-40 w-40 text-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Scan this QR code using your mobile banking app to complete the payment
-                  </p>
-                </motion.div>
-              )}
-
-              {selectedMethod === "card" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-2">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full bg-background border rounded-lg py-2 px-4"
-                      placeholder="1234 5678 9012 3456"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-muted-foreground mb-2">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full bg-background border rounded-lg py-2 px-4"
-                        placeholder="MM/YY"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-muted-foreground mb-2">
-                        CVC
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full bg-background border rounded-lg py-2 px-4"
-                        placeholder="123"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Add similar sections for other payment methods */}
-
-            </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Processing..." : "Confirm Deposit"}
-              </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Processing..." : "Submit Deposit Request"}
+            </button>
           </form>
         </motion.div>
       ) : (
@@ -256,14 +157,19 @@ export default function DepositPage() {
           className="bg-background/80 backdrop-blur-lg rounded-xl border p-8 shadow-sm max-w-md mx-auto text-center"
         >
           <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Deposit Successful!</h2>
+          <h2 className="text-2xl font-bold mb-2">Deposit Request Submitted!</h2>
           <p className="text-muted-foreground mb-4">
-            ${amount} has been added to your account balance
+            Your deposit request for ${amount} has been submitted successfully.
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Transaction ID: {transactionId}<br />
+            Your deposit will be processed after verification by admin, which usually takes 1-24 hours.
           </p>
           <button
             onClick={() => {
               setAmount("");
               setIsSubmitted(false);
+              setQrCodeUrl("");
             }}
             className="text-primary hover:text-primary/80"
           >

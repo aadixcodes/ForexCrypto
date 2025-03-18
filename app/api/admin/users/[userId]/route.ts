@@ -17,23 +17,17 @@ export async function PATCH(
   request: Request,
   { params }: { params: { userId: string } }
 ) {
-
+  try {
     const { userId } = params;
     const user = await prisma.user.update({
       where: { id: userId },
       data: { isVerified: true }
     });
 
-    // // Send verification email
-    // await transporter.sendMail({
-    //   from: process.env.SMTP_FROM,
-    //   to: user.email,
-    //   subject: "Account Verified - Trading Platform",
-    //   text: "Your account has been verified. You can now start trading.",
-    //   html: "<div>Your account has been verified. You can now start trading.</div>",
-    // });
-
     return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+  }
 }
 
 // For updating user details
@@ -41,20 +35,24 @@ export async function PUT(
   request: Request,
   { params }: { params: { userId: string } }
 ) {
-  const { userId } = params;
-  const userData = await request.json();
+  try {
+    const { userId } = params;
+    const userData = await request.json();
 
-  // Parse the dob field as a Date object
-  if (userData.dob) {
-    userData.dob = new Date(userData.dob);
+    // Parse the dob field as a Date object
+    if (userData.dob) {
+      userData.dob = new Date(userData.dob);
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: userData,
+    });
+
+    return NextResponse.json({ success: true, user });
+  } catch (error) {
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
-
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: userData,
-  });
-
-  return NextResponse.json({ success: true, user });
 }
 
 // For deleting users
@@ -74,41 +72,43 @@ export async function DELETE(
 }
 
 export async function GET(
-  request: Request,
+  request: Request, 
   { params }: { params: { userId: string } }
 ) {
   try {
+    const { userId } = params;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+    
     const user = await prisma.user.findUnique({
-      where: {
-        id: params.userId,
-      },
+      where: { id: userId },
       include: {
-        transactions: {
-          orderBy: {
-            timestamp: 'desc'
-          }
-        },
-        orders: {
-          orderBy: {
-            createdAt: 'desc'
-          }
-        },
+        transactions: true,
+        orders: true,
         loanRequest: true,
       },
     });
-
+    
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
+        { success: false, message: 'User not found' },
         { status: 404 }
       );
     }
-
-    return NextResponse.json(user);
+    
+    return NextResponse.json({
+      success: true,
+      user,
+    });
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
-      { error: "Failed to fetch user" },
+      { success: false, message: 'Failed to fetch user details' },
       { status: 500 }
     );
   }

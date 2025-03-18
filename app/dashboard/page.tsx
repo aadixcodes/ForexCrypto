@@ -34,6 +34,7 @@ type DashboardData = {
     amount: number;
     timestamp: string;
     status: string;
+    verified: boolean;
   }>;
   openPositions: Array<{
     id: string;
@@ -334,7 +335,13 @@ export default function DashboardPage() {
                             <Clock className="h-3 w-3" /> Pending
                           </span>
                         ) : transaction.status === 'COMPLETED' ? (
-                          <span className="text-green-400">Completed</span>
+                          <span className={`text-green-400 ${transaction.type === 'DEPOSIT' && !transaction.verified ? 'flex items-center gap-1' : ''}`}>
+                            {transaction.type === 'DEPOSIT' && !transaction.verified ? (
+                              <>
+                                <AlertCircle className="h-3 w-3" /> Verification Pending
+                              </>
+                            ) : 'Completed'}
+                          </span>
                         ) : (
                           <span className="text-red-400">Failed</span>
                         )}
@@ -411,10 +418,12 @@ export default function DashboardPage() {
                           {transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount.toLocaleString()}
                         </p>
                         <p className={`text-xs ${
-                          transaction.status === 'COMPLETED' ? 'text-green-500' : 
-                          transaction.status === 'PENDING' ? 'text-yellow-500' : 'text-red-500'
+                          transaction.status === 'COMPLETED' ? 
+                            (transaction.type === 'DEPOSIT' && !transaction.verified ? 'text-yellow-500' : 'text-green-500') : 
+                            transaction.status === 'PENDING' ? 'text-yellow-500' : 'text-red-500'
                         }`}>
-                          {transaction.status}
+                          {transaction.status === 'COMPLETED' && transaction.type === 'DEPOSIT' && !transaction.verified ? 
+                            'Verification Pending' : transaction.status}
                         </p>
                       </div>
                     </div>

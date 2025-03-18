@@ -31,7 +31,8 @@ export async function GET(request: Request) {
                 where: {
                     userId,
                     type: 'DEPOSIT',
-                    status: 'COMPLETED'
+                    status: 'COMPLETED',
+                    verified: true
                 },
                 _sum: { amount: true }
             }),
@@ -46,7 +47,17 @@ export async function GET(request: Request) {
             prisma.transaction.findMany({
                 where: { 
                     userId,
-                    status: 'COMPLETED'
+                    OR: [
+                        { 
+                            type: 'WITHDRAW',
+                            status: 'COMPLETED'
+                        },
+                        { 
+                            type: 'DEPOSIT',
+                            status: 'COMPLETED',
+                            verified: true
+                        }
+                    ]
                 },
                 orderBy: { timestamp: 'desc' },
                 take: 5,
@@ -55,7 +66,8 @@ export async function GET(request: Request) {
                     type: true,
                     amount: true,
                     timestamp: true,
-                    status: true
+                    status: true,
+                    verified: true
                 }
             }),
             prisma.orderHistory.findMany({
