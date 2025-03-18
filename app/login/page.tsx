@@ -8,6 +8,7 @@ import { Eye, EyeOff, ArrowRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-context";
+import LoadingOverlay from "@/components/ui/loading-overlay";
 
 function LoginPage() {
   const [showPasswords, setShowPasswords] = useState({
@@ -16,6 +17,7 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { setAuth, isLoading, email } = useAuth();
   const router = useRouter();
 
@@ -28,6 +30,7 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/user/login", {
@@ -60,6 +63,8 @@ function LoginPage() {
     } catch (error) {
       console.error("Error:", error);
       setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -72,11 +77,12 @@ function LoginPage() {
 
   // Show loading state
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingOverlay message="Loading user information..." />;
   }
 
   return (
     <div className="relative min-h-[100vh] flex items-center justify-center overflow-hidden pt-14">
+      {isSubmitting && <LoadingOverlay message="Signing in..." />}
       <div className="container px-4 mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -149,6 +155,7 @@ function LoginPage() {
               <Button
                 type="submit"
                 className="w-full bg-green-500 hover:bg-green-600 font-semibold"
+                disabled={isSubmitting}
               >
                 Sign In
                 <ArrowRight className="ml-2 h-4 w-4" />

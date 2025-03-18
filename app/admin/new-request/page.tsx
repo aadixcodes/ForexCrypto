@@ -2,14 +2,15 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { User, Mail, Clock, CheckCircle2, XCircle, UserPlus, UserCheck, UserX, Edit, Trash2, MessageSquare, UserPlus as UserPlusIcon } from "lucide-react";
+import { User, Mail, Clock, CheckCircle2, UserCheck, Trash2, MessageSquare, UserPlus as UserPlusIcon, Pencil as Edit } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ViewUserModal } from "@/components/modals/ViewUserModal";
 import { EditUserModal } from "@/components/modals/EditUserModal";
+import LoadingOverlay from "@/components/ui/loading-overlay";
 
-interface UserRequest {
+interface UserRequest { 
   id: string;
   name: string;
   email: string;
@@ -34,6 +35,7 @@ export default function NewUserRequests() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Separate user state for each modal
   const [viewUser, setViewUser] = useState<UserRequest | null>(null);
@@ -64,19 +66,23 @@ export default function NewUserRequests() {
 
   const handleVerifyUser = async (userId: string) => {
     try {
+      setIsLoading(true);
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
       });
       if (!response.ok) throw new Error();
       toast.success('User successfully verified');
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
       toast.error('Failed to verify user');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUpdateUser = async (userId: string) => {
     try {
+      setIsLoading(true);
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -84,32 +90,39 @@ export default function NewUserRequests() {
       });
       if (!response.ok) throw new Error();
       toast.success('User successfully updated');
-      fetchUsers();
+      await fetchUsers();
       setIsEditModalOpen(false);
       setEditUser(null);
       setEditedUser({});
     } catch (error) {
       toast.error('Failed to update user');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      setIsLoading(true);
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error();
       toast.success('User successfully deleted');
-      fetchUsers();
+      await fetchUsers();
       setIsDeleteModalOpen(false);
       setDeleteUser(null);
     } catch (error) {
       toast.error('Failed to delete user');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {isLoading && <LoadingOverlay message="Processing user data..." />}
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

@@ -5,6 +5,7 @@ import { Users, Activity, Wallet, Coins, Clock, AlertTriangle, CheckCircle2, XCi
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/auth-context";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type AdminDashboardData = {
   stats: Array<{
@@ -274,29 +275,38 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* Quick Actions */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
       >
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5" />
+          {/* <ArrowUturnDown className="h-5 w-5 mr-3 text-blue-500" /> */}
+          {/* <ArrowUturnUp className="h-5 w-5 mr-3 text-green-500" /> */}
           Quick Actions
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="p-4 rounded-lg border hover:border-primary/50 transition-colors">
-            Add New User
-          </button>
-          <button className="p-4 rounded-lg border hover:border-primary/50 transition-colors">
-            Mass Approve
-          </button>
-          <button className="p-4 rounded-lg border hover:border-primary/50 transition-colors">
-            Generate Reports
-          </button>
-          <button className="p-4 rounded-lg border hover:border-primary/50 transition-colors">
-            System Settings
-          </button>
+          <Link
+            href="/admin/withdraw-request"
+            className="flex items-center px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+          >
+            {/* <ArrowUturnDown className="h-5 w-5 mr-3 text-blue-500" /> */}
+            <div>
+              <h3 className="font-medium">Withdraw Requests</h3>
+              <p className="text-sm text-gray-500">Manage user withdrawal requests</p>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/deposit-verification"
+            className="flex items-center px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
+          >
+            {/* <ArrowUturnUp className="h-5 w-5 mr-3 text-green-500" /> */}
+            <div>
+              <h3 className="font-medium">Deposit Verification</h3>
+              <p className="text-sm text-gray-500">Verify pending deposit requests</p>
+            </div>
+          </Link>
         </div>
       </motion.div>
     </div>

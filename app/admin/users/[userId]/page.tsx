@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -7,7 +7,25 @@ import { User, Transaction, OrderHistory, LoanRequest } from "@prisma/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-interface ExtendedUser extends User {
+interface UserDetails {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  isVerified: boolean;
+  createdAt: Date;
+  status: string | null;
+  gender?: string | null;
+  dob?: Date | null;
+  pan?: string | null;
+  aadharNo?: string | null;
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountHolder?: string | null;
+  ifscCode?: string | null;
+  nomineeName?: string | null;
+  nomineeRelation?: string | null;
+  nomineeDob?: Date | null;
   transactions: Transaction[];
   orders: OrderHistory[];
   loanRequest: LoanRequest | null;
@@ -15,7 +33,7 @@ interface ExtendedUser extends User {
 
 export default function UserDetails() {
   const params = useParams();
-  const [user, setUser] = useState<ExtendedUser | null>(null);
+  const [user, setUser] = useState<UserDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +41,11 @@ export default function UserDetails() {
       try {
         const response = await fetch(`/api/admin/users/${params.userId}`);
         const data = await response.json();
-        setUser(data);
+        if (data.success) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
       } catch (error) {
         console.error('Error fetching user details:', error);
       } finally {
@@ -65,7 +87,7 @@ export default function UserDetails() {
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>Phone:</strong> {user.phone}</p>
                 <p><strong>Gender:</strong> {user.gender}</p>
-                <p><strong>DOB:</strong> {format(new Date(user.dob), 'PP')}</p>
+                <p><strong>DOB:</strong> {user.dob ? format(new Date(user.dob), 'PP') : 'N/A'}</p>
                 <p><strong>Verification Status:</strong> {user.isVerified ? 'Verified' : 'Pending'}</p>
               </div>
             </div>
@@ -92,7 +114,7 @@ export default function UserDetails() {
               <div className="mt-2 space-y-2">
                 <p><strong>Name:</strong> {user.nomineeName}</p>
                 <p><strong>Relation:</strong> {user.nomineeRelation}</p>
-                <p><strong>DOB:</strong> {format(new Date(user.nomineeDob), 'PP')}</p>
+                <p><strong>DOB:</strong> {user.nomineeDob ? format(new Date(user.nomineeDob), 'PP') : 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -103,8 +125,8 @@ export default function UserDetails() {
       <div className="bg-background/80 backdrop-blur-lg rounded-xl border p-6">
         <h2 className="text-2xl font-semibold mb-6">Transaction History</h2>
         <div className="space-y-4">
-          {user.transactions.length > 0 ? (
-            user.transactions.map((transaction) => (
+          {(user.transactions || []).length > 0 ? (
+            (user.transactions || []).map((transaction) => (
               <div key={transaction.id} className="border p-4 rounded-lg">
                 <div className="flex justify-between">
                   <span className="font-medium">₹{transaction.amount}</span>
@@ -132,8 +154,8 @@ export default function UserDetails() {
       <div className="bg-background/80 backdrop-blur-lg rounded-xl border p-6">
         <h2 className="text-2xl font-semibold mb-6">Trading History</h2>
         <div className="space-y-4">
-          {user.orders.length > 0 ? (
-            user.orders.map((order) => (
+          {(user.orders || []).length > 0 ? (
+            (user.orders || []).map((order) => (
               <div key={order.id} className="border p-4 rounded-lg">
                 <div className="flex justify-between">
                   <span className="font-medium">{order.symbol}</span>
