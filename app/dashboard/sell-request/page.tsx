@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-context";
 import { Order, TradeStatus } from "@/app/types/orders";
 import { TrendingUp, TrendingDown, DollarSign, Calendar } from "lucide-react";
 
 export default function SellRequestPage() {
-  const router = useRouter();
   const { user, isLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<string | null>(null);

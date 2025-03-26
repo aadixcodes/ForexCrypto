@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { CheckCircle, QrCode } from "lucide-react";
+import { CheckCircle, QrCode, Loader2, CreditCard } from "lucide-react";
 import { useAuth } from "@/app/auth-context";
 import Image from "next/image";
 import LoadingOverlay from "@/components/ui/loading-overlay";
@@ -67,6 +67,107 @@ export default function DepositPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const App = () => {
+    const [amount, setAmount] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+    const [upiLink, setUpiLink] = useState<string>('');
+
+    const generateQR = () => {
+      if (!amount || parseFloat(amount) <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      setIsLoading(true);
+      setQrCodeUrl(''); // Clear previous QR code
+      const upiId = "investingtradingg@ybl";
+      const businessName = "Forex Crypto";
+      const upiLinkData =
+        `upi://pay?pa=${upiId}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR&mc=0000&tn=Payment+for+order`;
+      setUpiLink(upiLinkData);
+      // Simulate API delay
+      setTimeout(() => {
+        const qrAPI = `https://api.qrserver.com/v1/create-qrcode/?size=200x200&data=${encodeURIComponent(upiLinkData)}`;
+        setQrCodeUrl(qrAPI);
+        setIsLoading(false);
+      }, 1500);
+    };
+
+    const handlePayment = () => {
+      if (upiLink) {
+        window.location.href = upiLink;
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-6">
+          <div className="text-center">
+            <div className="inline-block p-3 bg-blue-50 rounded-full mb-4">
+              <QrCode className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">QR Code Payment</h1>
+            <p className="text-gray-500 mt-2">Enter amount to generate payment QR</p>
+          </div>
+          <div className="space-y-4">
+            <div className="relative">
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Enter amount"
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">INR</span>
+            </div>
+            <button
+              onClick={generateQR}
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Generating QR...
+                </>
+              ) : (
+                'Generate QR Code'
+              )}
+            </button>
+          </div>
+          <div className="space-y-4">
+            {isLoading && (
+              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-600 rounded-full animate-loading-bar"></div>
+              </div>
+            )}
+            {qrCodeUrl && (
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <img
+                    src={qrCodeUrl}
+                    alt="Payment QR Code"
+                    className="w-48 h-48 object-contain"
+                  />
+                </div>
+                <button
+                  onClick={handlePayment}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  Make Payment
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="text-center text-sm text-gray-500">
+            Secure payments powered by UPI
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
