@@ -24,7 +24,7 @@ export default function DepositPage() {
   const [upiLink, setUpiLink] = useState("");
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [isLoadingPaymentInfo, setIsLoadingPaymentInfo] = useState(true);
-  const { userId, user } = useAuth();
+  const { userId} = useAuth();
 
   // Fetch active UPI payment info
   useEffect(() => {
