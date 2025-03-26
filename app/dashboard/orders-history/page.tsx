@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Briefcase, Coins, BarChart, Calendar, ArrowUpRight, ArrowDownRight, DollarSign } from "lucide-react";
 import { Order } from "@/app/types/orders";
 import { useAuth } from "@/app/auth-context";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function OrdersHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -156,41 +157,25 @@ export default function OrdersHistoryPage() {
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Volume</p>
-              <p className="text-2xl font-semibold mt-2">${totalVolume.toLocaleString()}</p>
-            </div>
-            <div className="p-2 rounded-lg bg-blue-400/10">
-              <Coins className="h-6 w-6 text-blue-400" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Net P&L</p>
-              <p className={`text-2xl font-semibold mt-2 ${netPNL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                ${Math.abs(netPNL).toLocaleString()}
-              </p>
-            </div>
-            <div className="p-2 rounded-lg bg-purple-400/10">
-              <BarChart className="h-6 w-6 text-purple-400" />
-            </div>
-          </div>
-        </motion.div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Trading Volume</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold mt-2">₹{totalVolume.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Net Profit/Loss</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-2xl font-semibold mt-2 ${netPNL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              ₹{Math.abs(netPNL).toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Orders Table */}
@@ -273,9 +258,11 @@ export default function OrdersHistoryPage() {
                       </div>
                     </td>
                     <td className="p-3 font-medium">{order.symbol}</td>
-                    <td className="p-3 text-right">{order.quantity}</td>
-                    <td className="p-3 text-right">${order.buyPrice}</td>
-                    <td className="p-3 text-right">{order.sellPrice ? `$${order.sellPrice}` : '-'}</td>
+                    <td className="p-3 text-right">
+                      <span className="font-semibold">{order.quantity}</span>
+                    </td>
+                    <td className="p-3 text-right">₹{order.buyPrice}</td>
+                    <td className="p-3 text-right">{order.sellPrice ? `₹${order.sellPrice}` : '-'}</td>
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         order.type === 'LONG' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'
@@ -284,18 +271,13 @@ export default function OrdersHistoryPage() {
                       </span>
                     </td>
                     <td className={`p-3 text-right font-medium ${
-                      order.profitLoss && order.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'
+                      order.profitLoss 
+                        ? order.profitLoss > 0 
+                          ? 'text-green-500' 
+                          : 'text-red-500'
+                        : 'text-muted-foreground'
                     }`}>
-                      <div className="flex items-center justify-end gap-1">
-                        {order.profitLoss ? (
-                          order.profitLoss >= 0 ? (
-                            <ArrowUpRight className="h-4 w-4" />
-                          ) : (
-                            <ArrowDownRight className="h-4 w-4" />
-                          )
-                        ) : null}
-                        {order.profitLoss ? `$${Math.abs(order.profitLoss).toFixed(2)}` : '-'}
-                      </div>
+                      {order.profitLoss ? `₹${Math.abs(order.profitLoss).toFixed(2)}` : '-'}
                     </td>
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${
@@ -350,9 +332,11 @@ export default function OrdersHistoryPage() {
                 <span className="text-muted-foreground">Quantity:</span>
                 <span className="font-medium">{selectedOrder.quantity}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Buy Price:</span>
-                <span className="font-medium">${selectedOrder.buyPrice}</span>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Buy Price:</span>
+                  <span className="font-medium">₹{selectedOrder.buyPrice}</span>
+                </div>
               </div>
               
               <div className="pt-4 border-t">
@@ -370,15 +354,16 @@ export default function OrdersHistoryPage() {
                 />
               </div>
               
-              <div className="pt-4 border-t flex justify-between items-center">
-                <span className="text-sm font-medium">Estimated P&L:</span>
-                <span className={`text-lg font-bold ${
-                  (sellPrice - selectedOrder.buyPrice) * selectedOrder.quantity >= 0 
-                    ? 'text-green-400' 
-                    : 'text-red-400'
-                }`}>
-                  ${((sellPrice - selectedOrder.buyPrice) * selectedOrder.quantity).toFixed(2)}
-                </span>
+              <div className="mt-4 p-4 bg-background rounded-lg border">
+                <h3 className="font-medium mb-2">Estimated Profit/Loss</h3>
+                <div className="flex justify-between items-center">
+                  <span>Sell Price × Quantity:</span>
+                  <span className={`text-lg font-bold ${
+                    sellPrice > selectedOrder.buyPrice ? 'text-green-500' : 'text-red-500'
+                  }`}>
+                    ₹{((sellPrice - selectedOrder.buyPrice) * selectedOrder.quantity).toFixed(2)}
+                  </span>
+                </div>
               </div>
             </div>
             

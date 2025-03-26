@@ -42,7 +42,7 @@ export function Header() {
     {
       id: 3,
       title: "Deposit Received",
-      message: "$5,000 deposit has been credited to your account",
+      message: "₹5,000 deposit has been credited to your account",
       timestamp: "4 hours ago",
       type: "info"
     }

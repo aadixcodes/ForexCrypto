@@ -126,25 +126,25 @@ export default function DashboardPage() {
   const stats = [
     { 
       title: "Account Balance", 
-      value: dashboardData ? `$${dashboardData.accountBalance.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.accountBalance.toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <DollarSign className="h-5 w-5 text-primary" />
     },
     { 
       title: "Total Deposits", 
-      value: dashboardData ? `$${dashboardData.totalDeposits.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.totalDeposits.toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <TrendingUp className="h-5 w-5 text-primary" />
     },
     { 
       title: "Total Withdrawals", 
-      value: dashboardData ? `$${dashboardData.totalWithdrawals.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.totalWithdrawals.toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <ArrowUpRight className="h-5 w-5 text-primary" />
     },
     { 
       title: "Profit/Loss", 
-      value: dashboardData ? `$${dashboardData.profitLoss.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.profitLoss.toLocaleString()}` : "₹0", 
       change: profitLossPercentage,
       color: profitLoss >= 0 ? "text-green-400" : "text-red-400",
       icon: profitLoss >= 0 ? 
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                       <span>Deposits</span>
                     </div>
                     <span className="text-sm font-medium">
-                      ${dashboardData?.totalDeposits.toLocaleString() || "0"}
+                      ₹{dashboardData?.totalDeposits.toLocaleString() || "0"}
                     </span>
                   </div>
                   <Progress value={depositPercentage} className="h-2 bg-muted" indicatorClassName="bg-green-500" />
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                       <span>Withdrawals</span>
                     </div>
                     <span className="text-sm font-medium">
-                      ${dashboardData?.totalWithdrawals.toLocaleString() || "0"}
+                      ₹{dashboardData?.totalWithdrawals.toLocaleString() || "0"}
                     </span>
                   </div>
                   <Progress value={100 - depositPercentage} className="h-2 bg-muted" indicatorClassName="bg-red-500" />
@@ -327,7 +327,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <span className={`text-sm ${transaction.type === 'DEPOSIT' ? 'text-green-400' : 'text-red-400'}`}>
-                        {transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                        ₹{transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                       </span>
                       <p className="text-xs text-muted-foreground">
                         {transaction.status === 'PENDING' ? (
@@ -368,12 +368,14 @@ export default function DashboardPage() {
                       <div className="flex gap-2 text-sm text-muted-foreground">
                         <span>{position.quantity} units</span>
                         <span>@</span>
-                        <span>${position.buyPrice}</span>
+                        <span>₹{position.buyPrice}</span>
                       </div>
                     </div>
-                    <span className={`text-sm ${position.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {position.profitLoss >= 0 ? '+' : '-'}${Math.abs(position.profitLoss).toLocaleString()}
-                    </span>
+                    <div className={`text-right font-medium ${
+                      position.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {position.profitLoss >= 0 ? '+' : '-'}₹{Math.abs(position.profitLoss).toLocaleString()}
+                    </div>
                   </div>
                 )) || (
                   <p className="text-muted-foreground text-center">No open positions</p>
@@ -415,7 +417,7 @@ export default function DashboardPage() {
                         <p className={`font-medium ${
                           transaction.type === 'DEPOSIT' ? 'text-green-500' : 'text-red-500'
                         }`}>
-                          {transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                          ₹{transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                         </p>
                         <p className={`text-xs ${
                           transaction.status === 'COMPLETED' ? 
@@ -466,7 +468,9 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div className="text-sm">
-                        {position.quantity} @ ${position.buyPrice}
+                        <span className="font-medium">
+                          {position.quantity} @ ₹{position.buyPrice}
+                        </span>
                       </div>
                       <div className="text-sm">
                         {new Date(position.tradeDate).toLocaleDateString()}
@@ -474,7 +478,7 @@ export default function DashboardPage() {
                       <div className={`text-right font-medium ${
                         position.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
                       }`}>
-                        {position.profitLoss >= 0 ? '+' : '-'}${Math.abs(position.profitLoss).toLocaleString()}
+                        {position.profitLoss >= 0 ? '+' : '-'}₹{Math.abs(position.profitLoss).toLocaleString()}
                       </div>
                     </div>
                   ))
