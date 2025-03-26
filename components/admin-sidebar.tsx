@@ -46,6 +46,7 @@ export function AdminSidebar() {
     { name: "Order Requests", href: "/admin/order-requests", icon: <History className="h-5 w-5" /> },
     { name: "Sell Requests", href: "/admin/sell-requests", icon: <ArrowDownUp className="h-5 w-5" /> },
     { name: "Loan Requests", href: "/admin/loan-request-users", icon: <HandCoins className="h-5 w-5" /> },
+    { name: "UPI ID", href: "/admin/payment-settings", icon: <Wallet className="h-5 w-5" /> },
     { name: "Total Users", href: "/admin/total-users", icon: <CircleDollarSign className="h-5 w-5" /> },
     // { name: "Transactions", href: "/admin/transaction", icon: <ArrowDownUp className="h-5 w-5" /> },
     { name: "Account Settings", href: "/admin/account-setting", icon: <Settings className="h-5 w-5" /> },

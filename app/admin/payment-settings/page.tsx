@@ -211,7 +211,7 @@ export default function PaymentSettingsPage() {
       {isAdding && (
         <div className="bg-background/80 backdrop-blur-lg rounded-xl border p-4 shadow-sm">
           <h2 className="text-lg font-medium mb-4">Add New UPI ID</h2>
-          <form onSubmit={handleAddPaymentInfo} className="space-y-4">
+          <form onSubmit={handleAddPaymentInfo} className="space-y-4 flex flex-col">
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1">
                 UPI ID
@@ -240,7 +240,7 @@ export default function PaymentSettingsPage() {
               />
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -262,8 +262,8 @@ export default function PaymentSettingsPage() {
       )}
       
       {/* Payment info list */}
-      <div className="bg-background/80 backdrop-blur-lg rounded-xl border shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-background/80 backdrop-blur-lg rounded-xl border shadow-sm overflow-x-auto">
+        <table className="min-w-full">
           <thead className="bg-muted/50">
             <tr>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm">UPI ID</th>
