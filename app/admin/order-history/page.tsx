@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User } from "@prisma/client";
-import { Calendar, Users, Pencil, X } from "lucide-react";
+import { Calendar, Users, Pencil, X, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { EditOrderModal } from "@/app/components/EditOrderModal";
 import { Order, NewOrder, TradeType, TradeStatus } from "@/app/types/orders";
 
@@ -16,7 +16,7 @@ export default function AdminOrderHistory() {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedUserOrders, setSelectedUserOrders] = useState<UserWithOrders | null>(null);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [newOrder, setNewOrder] = useState<NewOrder>({
+  const [newOrder, setNewOrder] = useState<Omit<NewOrder, 'userId'>>({
     symbol: "",
     quantity: 0,
     buyPrice: 0,
@@ -93,8 +93,8 @@ export default function AdminOrderHistory() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: selectedUser,
           ...newOrder,
+          userId: selectedUser,
           tradeDate: new Date(),
           profitLoss: (newOrder.sellPrice - newOrder.buyPrice) * newOrder.quantity,
         }),
@@ -103,7 +103,15 @@ export default function AdminOrderHistory() {
       if (response.ok) {
         setIsCreatingOrder(false);
         fetchUserOrders(selectedUser);
-        setNewOrder({ symbol: "", quantity: 0, buyPrice: 0, sellPrice: 0, tradeAmount: 0, type: TradeType.LONG, status: TradeStatus.OPEN });
+        setNewOrder({
+          symbol: "",
+          quantity: 0,
+          buyPrice: 0,
+          sellPrice: 0,
+          tradeAmount: 0,
+          type: TradeType.LONG,
+          status: TradeStatus.OPEN
+        });
       }
     } catch (error) {
       console.error("Error creating order:", error);
@@ -149,11 +157,10 @@ export default function AdminOrderHistory() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+        body: JSON.stringify(modalMode === 'create' ? {
           ...orderData,
-          userId: selectedUser,
-          symbol: orderData.symbol, // Ensure symbol is included
-        }),
+          userId: selectedUser
+        } : orderData),
       });
   
       if (response.ok) {
@@ -167,6 +174,94 @@ export default function AdminOrderHistory() {
     }
   };
 
+  // Mobile card for orders
+  const renderOrderCard = (order: Order) => (
+    <motion.div
+      key={order.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="border rounded-lg p-4 mb-4 bg-background/80"
+    >
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">{new Date(order.tradeDate).toLocaleDateString()}</span>
+        </div>
+        <button
+          onClick={() => handleEditClick(order)}
+          className="p-1 hover:text-primary"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Symbol</p>
+          <p className="font-medium">{order.symbol}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Quantity</p>
+          <p className="font-medium">{order.quantity}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Type</p>
+          <span
+            className={`px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 ${
+              order.type === "LONG"
+                ? "bg-green-400/10 text-green-400"
+                : "bg-red-400/10 text-red-400"
+            }`}
+          >
+            {order.type === "LONG" ? 
+              <TrendingUp className="h-3 w-3" /> : 
+              <TrendingDown className="h-3 w-3" />
+            }
+            {order.type}
+          </span>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Status</p>
+          <span
+            className={`px-2 py-1 rounded-full text-xs ${
+              order.status === 'OPEN' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-blue-400/10 text-blue-400'
+            }`}
+          >
+            {order.status}
+          </span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Buy Price</p>
+          <p className="font-medium flex items-center">
+            <DollarSign className="h-3 w-3 text-muted-foreground" />
+            {order.buyPrice}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Sell Price</p>
+          <p className="font-medium flex items-center">
+            <DollarSign className="h-3 w-3 text-muted-foreground" />
+            {order.sellPrice ? order.sellPrice : '-'}
+          </p>
+        </div>
+      </div>
+      
+      <div className="border-t pt-3 mt-2">
+        <div className="flex justify-between items-center">
+          <p className="text-xs font-medium">Profit/Loss:</p>
+          <p className={`font-medium ${
+            order.profitLoss && order.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
+          }`}>
+            {order.profitLoss ? `$${order.profitLoss.toFixed(2)}` : '-'}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <motion.div
@@ -177,7 +272,7 @@ export default function AdminOrderHistory() {
         <h1 className="text-3xl font-bold text-primary mb-6">Manage Order History</h1>
       </motion.div>
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
         <div className="flex-1">
           <select
             value={selectedUser}
@@ -195,7 +290,7 @@ export default function AdminOrderHistory() {
         {selectedUser && (
           <button
             onClick={handleCreateClick}
-            className="px-4 py-2 bg-primary text-white rounded-lg"
+            className="w-full md:w-auto px-4 py-2 bg-primary text-white rounded-lg flex justify-center items-center"
           >
             Create Order
           </button>
@@ -316,7 +411,19 @@ export default function AdminOrderHistory() {
             </h3>
           </div>
           
-          <div className="overflow-x-auto">
+          {/* Mobile View */}
+          <div className="md:hidden p-4">
+            {selectedUserOrders.orders.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No orders found for this user
+              </div>
+            ) : (
+              selectedUserOrders.orders.map(order => renderOrderCard(order))
+            )}
+          </div>
+          
+          {/* Desktop View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="text-xs text-muted-foreground border-b">
                 <tr>
@@ -334,111 +441,42 @@ export default function AdminOrderHistory() {
               <tbody>
                 {selectedUserOrders.orders.map((order) => (
                   <tr key={order.id} className="hover:bg-accent/5">
-                    {editingOrder === order.id ? (
-                      // Edit mode
-                      <>
-                        <td className="p-3">
-                          <input
-                            type="date"
-                            defaultValue={new Date(order.tradeDate).toISOString().split('T')[0]}
-                            onChange={(e) => {
-                              handleEditOrder({
-                                ...order,
-                                tradeDate: new Date(e.target.value)
-                              });
-                            }}
-                            className="w-full p-1 rounded border"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <input
-                            type="text"
-                            defaultValue={order.symbol}
-                            onChange={(e) => {
-                              handleEditOrder({
-                                ...order,
-                                symbol: e.target.value
-                              });
-                            }}
-                            className="w-full p-1 rounded border"
-                          />
-                        </td>
-                        <td className="p-3 text-right">{order.quantity}</td>
-                        <td className="p-3 text-right">${order.buyPrice}</td>
-                        <td className="p-3 text-right">
-                          {order.sellPrice ? `$${order.sellPrice}` : '-'}
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.type === 'LONG' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'
-                          }`}>
-                            {order.type}
-                          </span>
-                        </td>
-                        <td className={`p-3 text-right ${
-                          order.profitLoss && order.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
-                        }`}>
-                          {order.profitLoss ? `$${order.profitLoss.toFixed(2)}` : '-'}
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'OPEN' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-blue-400/10 text-blue-400'
-                          }`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingOrder(null)}
-                              className="p-1 hover:text-primary"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      // View mode
-                      <>
-                        <td className="p-3">
-                          {new Date(order.tradeDate).toLocaleDateString()}
-                        </td>
-                        <td className="p-3">{order.symbol}</td>
-                        <td className="p-3 text-right">{order.quantity}</td>
-                        <td className="p-3 text-right">${order.buyPrice}</td>
-                        <td className="p-3 text-right">
-                          {order.sellPrice ? `$${order.sellPrice}` : '-'}
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.type === 'LONG' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'
-                          }`}>
-                            {order.type}
-                          </span>
-                        </td>
-                        <td className={`p-3 text-right ${
-                          order.profitLoss && order.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
-                        }`}>
-                          {order.profitLoss ? `$${order.profitLoss.toFixed(2)}` : '-'}
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'OPEN' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-blue-400/10 text-blue-400'
-                          }`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <button
-                            onClick={() => handleEditClick(order)}
-                            className="p-1 hover:text-primary"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </>
-                    )}
+                    <td className="p-3">
+                      {new Date(order.tradeDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-3">{order.symbol}</td>
+                    <td className="p-3 text-right">{order.quantity}</td>
+                    <td className="p-3 text-right">${order.buyPrice}</td>
+                    <td className="p-3 text-right">
+                      {order.sellPrice ? `$${order.sellPrice}` : '-'}
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        order.type === 'LONG' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'
+                      }`}>
+                        {order.type}
+                      </span>
+                    </td>
+                    <td className={`p-3 text-right ${
+                      order.profitLoss && order.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {order.profitLoss ? `$${order.profitLoss.toFixed(2)}` : '-'}
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        order.status === 'OPEN' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-blue-400/10 text-blue-400'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleEditClick(order)}
+                        className="p-1 hover:text-primary"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

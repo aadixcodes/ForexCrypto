@@ -1,4 +1,3 @@
-// Sidebar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -16,10 +15,11 @@ import {
   Settings,
   Lock,
   Menu,
-  X
+  X,
+  FileText
 } from "lucide-react";
 
-export function Sidebar() {
+export function AdminSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
@@ -37,17 +37,18 @@ export function Sidebar() {
   }, []);
 
   const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { name: "Charts", href: "/dashboard/livechart", icon: <BarChart className="h-5 w-5" /> },
-    { name: "Transactions", href: "/dashboard/transaction", icon: <ArrowDownUp className="h-5 w-5" /> },
-    { name: "Order History", href: "/dashboard/orders-history", icon: <History className="h-5 w-5" /> },
-    { name: "Request Order", href: "/dashboard/order-request", icon: <History className="h-5 w-5" /> },
-    { name: "Request to Sell", href: "/dashboard/sell-request", icon: <ArrowDownUp className="h-5 w-5" /> },
-    { name: "Deposit", href: "/dashboard/deposit", icon: <CircleDollarSign className="h-5 w-5" /> },
-    { name: "Withdraw", href: "/dashboard/withdraw", icon: <Wallet className="h-5 w-5" /> },
-    { name: "Loan Request", href: "/dashboard/loan-request", icon: <HandCoins className="h-5 w-5" /> },
-    { name: "Account Settings", href: "/dashboard/account-setting", icon: <Settings className="h-5 w-5" /> },
-    { name: "Change Password", href: "/dashboard/change-password", icon: <Lock className="h-5 w-5" /> },
+    { name: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-5 w-5" /> },
+    { name: "Live Charts", href: "/admin/livechart", icon: <BarChart className="h-5 w-5" /> },
+    { name: "Order Requests", href: "/admin/order-requests", icon: <FileText className="h-5 w-5" /> },
+    { name: "New Users Request", href: "/admin/new-request", icon: <History className="h-5 w-5" /> },
+    { name: "Withdraw Requests", href: "/admin/withdraw-request", icon: <Wallet className="h-5 w-5" /> },
+    { name: "Deposit Requests", href: "/admin/deposit-verification", icon: <Wallet className="h-5 w-5" /> },
+    { name: "Order History", href: "/admin/order-history", icon: <History className="h-5 w-5" /> },
+    { name: "Loan Requests", href: "/admin/loan-request-users", icon: <HandCoins className="h-5 w-5" /> },
+    { name: "Total Users", href: "/admin/total-users", icon: <CircleDollarSign className="h-5 w-5" /> },
+    // { name: "Transactions", href: "/admin/transaction", icon: <ArrowDownUp className="h-5 w-5" /> },
+    { name: "Account Settings", href: "/admin/account-setting", icon: <Settings className="h-5 w-5" /> },
+    { name: "Change Password", href: "/admin/change-password", icon: <Lock className="h-5 w-5" /> },
   ];
 
   const handleLinkClick = () => {
@@ -106,4 +107,4 @@ export function Sidebar() {
       </motion.nav>
     </>
   );
-}
+} 

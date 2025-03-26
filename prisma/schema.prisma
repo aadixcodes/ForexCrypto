@@ -113,8 +113,10 @@ enum TradeType {
 }
 
 enum TradeStatus {
+  PENDING
   OPEN
   CLOSED
+  PENDING_SELL
 }
 
 enum LoanStatus {
