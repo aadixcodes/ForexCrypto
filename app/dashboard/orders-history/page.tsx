@@ -341,7 +341,7 @@ export default function OrdersHistoryPage() {
               
               <div className="pt-4 border-t">
                 <label htmlFor="sellPrice" className="block text-sm font-medium mb-1">
-                  Sell Price (USD)
+                  Sell Price (INR)
                 </label>
                 <input
                   id="sellPrice"

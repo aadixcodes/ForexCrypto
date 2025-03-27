@@ -48,7 +48,7 @@ export default function TotalUsers() {
       setIsLoading(true);
       const response = await fetch('/api/admin/users');
       const data = await response.json();
-      setUsers(data);
+      setUsers(data.users);
       
       // Calculate stats
       const today = new Date();

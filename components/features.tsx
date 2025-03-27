@@ -37,13 +37,6 @@ export function Features() {
             whileInView={{ scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Button 
-              size="lg" 
-              className="bg-green-500 hover:bg-green-600 rounded-full px-8 py-6 text-lg font-semibold shadow-lg shadow-green-500/20"
-            >
-              Start Trading Now
-              <LifeBuoy className="ml-2 h-5 w-5" />
-            </Button>
           </motion.div>
         </motion.div>
 

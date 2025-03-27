@@ -18,15 +18,14 @@ export async function GET() {
       include: {
         transactions: true,
         orders: true,
-        loanRequest: true,
       },
     });
 
-    return NextResponse.json(users);
+    return NextResponse.json({ success: true, users });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      { success: false, error: 'Failed to fetch users' },
       { status: 500 }
     );
   }
@@ -35,6 +34,13 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const { userId, action, message, userData } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
 
     switch (action) {
       case 'verify':
@@ -45,6 +51,12 @@ export async function PUT(request: Request) {
         break;
       
       case 'update':
+        if (!userData) {
+          return NextResponse.json(
+            { success: false, error: 'User data is required for update action' },
+            { status: 400 }
+          );
+        }
         await prisma.user.update({
           where: { id: userId },
           data: userData
@@ -56,6 +68,12 @@ export async function PUT(request: Request) {
           where: { id: userId }
         });
         break;
+
+      default:
+        return NextResponse.json(
+          { success: false, error: 'Invalid action' },
+          { status: 400 }
+        );
     }
 
     if (message) {
@@ -76,6 +94,10 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
+    console.error('Error processing user action:', error);
+    return NextResponse.json(
+      { success: false, error: 'Operation failed' }, 
+      { status: 500 }
+    );
   }
 }

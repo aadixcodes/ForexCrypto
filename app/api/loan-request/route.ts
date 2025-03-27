@@ -19,17 +19,23 @@ export async function POST(request: Request) {
     // Get user
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { loanRequest: true }
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if user already has a loan request
-    if (user.loanRequest) {
+    // Check if user has a pending loan request
+    const pendingLoan = await prisma.loanRequest.findFirst({
+      where: {
+        userId: user.id,
+        status: 'PENDING'
+      }
+    });
+
+    if (pendingLoan) {
       return NextResponse.json(
-        { error: 'User already has an active loan request' },
+        { error: 'You already have a pending loan request. Please wait for it to be processed before submitting another one.' },
         { status: 400 }
       );
     }
@@ -54,7 +60,6 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  
   try {
     const cookieStore = cookies();
     const userId = cookieStore.get('userId')?.value;
@@ -65,18 +70,23 @@ export async function GET(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { loanRequest: true }
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(user.loanRequest);
+    // Fetch all loan requests for the user, ordered by creation date
+    const loanRequests = await prisma.loanRequest.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(loanRequests);
   } catch (error) {
-    console.error('Fetch loan request error:', error);
+    console.error('Fetch loan requests error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch loan request' },
+      { error: 'Failed to fetch loan requests' },
       { status: 500 }
     );
   }

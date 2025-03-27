@@ -93,7 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCookie('userId', userId);
     setCookie('userEmail', email);
     setCookie('userName', name);
-    setCookie('userRole', role);
   };
 
   const logout = () => {
@@ -106,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeCookie('userId');
     removeCookie('userEmail');
     removeCookie('userName');
-    removeCookie('userRole');
   };
 
   const login = async (email: string, password: string) => {

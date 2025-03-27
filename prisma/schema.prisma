@@ -27,12 +27,12 @@ model User {
   isVerified      Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  nomineeDob      DateTime
+  role            String         @default("user")
+  status          String         @default("active")
+  loanRequests    LoanRequest[]
   orders          OrderHistory[]
   transactions    Transaction[]
-  nomineeDob       DateTime
-  loanRequest     LoanRequest?
-  role            String  @default("user")
-  status          String  @default("active")
 }
 
 model Transaction {
@@ -63,38 +63,38 @@ model OrderHistory {
   id          String      @id @default(uuid())
   userId      String
   tradeDate   DateTime
-  symbol      String    @default("UNKNOWN")
+  symbol      String      @default("UNKNOWN")
   quantity    Float
   buyPrice    Float
-  sellPrice   Float?      // Optional since order might not be sold yet
-  type        String      @default("LONG")  // Default to LONG for existing records
+  sellPrice   Float?
+  type        String      @default("LONG")
   status      TradeStatus @default(OPEN)
-  profitLoss  Float?      // Optional since P&L only exists for closed trades
+  profitLoss  Float?
   tradeAmount Float
-  user        User        @relation(fields: [userId], references: [id])
   createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @default(now())   // Default to current timestamp
+  updatedAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id])
 }
 
 model LoanRequest {
-  id            String      @id @default(uuid())
-  userId        String      @unique
-  amount        Float
-  duration      Int         // Duration in months
-  status        LoanStatus  @default(PENDING)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  user          User        @relation(fields: [userId], references: [id])
+  id        String     @id @default(uuid())
+  userId    String
+  amount    Float
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  duration  Int
+  status    LoanStatus @default(PENDING)
+  user      User       @relation(fields: [userId], references: [id])
 }
 
 model PaymentInfo {
-  id              String    @id @default(uuid())
-  type            String    @default("UPI")
-  upiId           String
-  merchantName    String
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  type         String   @default("UPI")
+  upiId        String
+  merchantName String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 enum TransactionType {

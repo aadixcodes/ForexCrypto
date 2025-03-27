@@ -36,8 +36,8 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching payment info:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch payment information' },
+      { success: false, error: 'Failed to fetch payment information' },
       { status: 500 }
     );
   }
-} 
+}

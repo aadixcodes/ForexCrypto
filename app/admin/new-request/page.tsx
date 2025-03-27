@@ -58,7 +58,7 @@ export default function NewUserRequests() {
     try {
       const response = await fetch('/api/admin/users');
       const data = await response.json();
-      setUsers(data);
+      setUsers(data.users);
     } catch (error) {
       toast.error("Failed to fetch users");
     }
