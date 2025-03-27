@@ -25,7 +25,8 @@ export async function GET(request: Request) {
             totalDeposits,
             totalWithdrawals,
             recentTransactions,
-            openPositions
+            openPositions,
+            approvedLoan
         ] = await Promise.all([
             prisma.transaction.aggregate({
                 where: {
@@ -85,20 +86,41 @@ export async function GET(request: Request) {
                     quantity: true,
                     buyPrice: true
                 }
+            }),
+            prisma.loanRequest.findFirst({
+                where: {
+                    userId,
+                    status: 'APPROVED'
+                },
+                orderBy: {
+                    updatedAt: 'desc'
+                },
+                select: {
+                    amount: true,
+                    duration: true,
+                    updatedAt: true
+                }
             })
         ]);
 
+        // Get approved loan amount
+        const approvedLoanAmount = approvedLoan ? approvedLoan.amount : 0;
+
         // Calculate account balance and other metrics
-        const accountBalance = (totalDeposits._sum.amount || 0) - (totalWithdrawals._sum.amount || 0);
+        const baseAccountBalance = (totalDeposits._sum.amount || 0) - (totalWithdrawals._sum.amount || 0);
+        const accountBalance = baseAccountBalance + approvedLoanAmount;
         const profitLoss = openPositions.reduce((sum, position) => sum + (position.profitLoss || 0), 0);
 
         return NextResponse.json({
             user,
             dashboardData: {
                 accountBalance,
+                baseAccountBalance,
                 totalDeposits: totalDeposits._sum.amount || 0,
                 totalWithdrawals: totalWithdrawals._sum.amount || 0,
                 profitLoss,
+                approvedLoanAmount,
+                approvedLoanDetails: approvedLoan,
                 recentTransactions,
                 openPositions
             }

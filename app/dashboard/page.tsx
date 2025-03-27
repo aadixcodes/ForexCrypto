@@ -12,7 +12,8 @@ import {
   AlertCircle,
   Clock,
   BarChart3,
-  History
+  History,
+  Coins
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth }  from "@/app/auth-context";
@@ -25,9 +26,16 @@ import { toast } from "@/hooks/use-toast";
 
 type DashboardData = {
   accountBalance: number;
+  baseAccountBalance: number;
   totalDeposits: number;
   totalWithdrawals: number;
   profitLoss: number;
+  approvedLoanAmount: number;
+  approvedLoanDetails?: {
+    amount: number;
+    duration: number;
+    updatedAt: string;
+  } | null;
   recentTransactions: Array<{
     id: string;
     type: 'DEPOSIT' | 'WITHDRAW';
@@ -151,6 +159,16 @@ export default function DashboardPage() {
         <TrendingUp className="h-5 w-5 text-primary" /> : 
         <TrendingDown className="h-5 w-5 text-primary" />
     },
+    ...(dashboardData?.approvedLoanAmount ? [
+      {
+        title: "Approved Loan", 
+        value: `₹${dashboardData.approvedLoanAmount.toLocaleString()}`, 
+        color: "text-blue-400",
+        icon: <Coins className="h-5 w-5 text-primary" />,
+        subtext: dashboardData.approvedLoanDetails ? 
+          `${dashboardData.approvedLoanDetails.duration} months` : undefined
+      }
+    ] : [])
   ];
 
   // Check if there are any pending transactions
@@ -243,6 +261,9 @@ export default function DashboardPage() {
                     <span className={`text-sm ${stat.color}`}>{stat.change}</span>
                   )}
                 </div>
+                {stat.subtext && (
+                  <p className="text-xs text-muted-foreground mt-1">{stat.subtext}</p>
+                )}
               </div>
               <div className="p-2 rounded-lg bg-primary/10">
                 {stat.icon}
@@ -271,6 +292,21 @@ export default function DashboardPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
+          {/* Loan Alert for Approved Loans */}
+          {dashboardData && dashboardData.approvedLoanAmount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-500/10 border border-blue-500/30 text-blue-500 p-4 rounded-lg flex items-center gap-3"
+            >
+              <Coins className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Loan Approved</p>
+                <p className="text-sm">Your loan request for ₹{dashboardData.approvedLoanAmount.toLocaleString()} has been approved and added to your account balance.</p>
+              </div>
+            </motion.div>
+          )}
+
           {/* Deposits vs Withdrawals Visualization */}
           <Card>
             <CardHeader>
@@ -327,7 +363,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <span className={`text-sm ${transaction.type === 'DEPOSIT' ? 'text-green-400' : 'text-red-400'}`}>
-                        ₹{transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
+                        {transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                       </span>
                       <p className="text-xs text-muted-foreground">
                         {transaction.status === 'PENDING' ? (
@@ -417,7 +453,7 @@ export default function DashboardPage() {
                         <p className={`font-medium ${
                           transaction.type === 'DEPOSIT' ? 'text-green-500' : 'text-red-500'
                         }`}>
-                          ₹{transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
+                          {transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                         </p>
                         <p className={`text-xs ${
                           transaction.status === 'COMPLETED' ? 
