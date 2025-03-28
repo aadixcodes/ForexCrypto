@@ -22,6 +22,8 @@ export enum TradeType {
     status: TradeStatus;
     profitLoss: number | null;
     tradeAmount: number;
+    createdAt?: Date;
+    updatedAt?: Date;
   };
   
   export type NewOrder = {

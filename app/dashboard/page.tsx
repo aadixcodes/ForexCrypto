@@ -275,9 +275,6 @@ export default function DashboardPage() {
                     <span className={`text-sm ${stat.color}`}>{stat.change}</span>
                   )}
                 </div>
-                {stat.subtext && (
-                  <p className="text-xs text-muted-foreground mt-1">{stat.subtext}</p>
-                )}
               </div>
               <div className="p-2 rounded-lg bg-primary/10">
                 {stat.icon}
