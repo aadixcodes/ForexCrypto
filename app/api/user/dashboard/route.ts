@@ -26,6 +26,7 @@ export async function GET(request: Request) {
             totalWithdrawals,
             recentTransactions,
             openPositions,
+            closedPositions,
             approvedLoan
         ] = await Promise.all([
             prisma.transaction.aggregate({
@@ -87,6 +88,24 @@ export async function GET(request: Request) {
                     buyPrice: true
                 }
             }),
+            prisma.orderHistory.findMany({
+                where: { 
+                    userId,
+                    status: 'CLOSED'
+                },
+                orderBy: { tradeDate: 'desc' },
+                take: 5,
+                select: {
+                    id: true,
+                    symbol: true,
+                    type: true,
+                    profitLoss: true,
+                    tradeDate: true,
+                    quantity: true,
+                    buyPrice: true,
+                    sellPrice: true
+                }
+            }),
             prisma.loanRequest.aggregate({
                 where: {
                     userId,
@@ -99,15 +118,36 @@ export async function GET(request: Request) {
             })
         ]);
 
-
-        // Get approved loan amount
-        console.log(approvedLoan)
-        const approvedLoanAmount = approvedLoan ? approvedLoan._sum.amount : 0;
-        console.log(approvedLoanAmount)
+        // Get approved loan amount (fixing the TypeScript error)
+        const approvedLoanAmount = approvedLoan?._sum?.amount ?? 0;
+        
         // Calculate account balance and other metrics
         const baseAccountBalance = (totalDeposits._sum.amount || 0) - (totalWithdrawals._sum.amount || 0);
         const accountBalance = baseAccountBalance + approvedLoanAmount;
-        const profitLoss = openPositions.reduce((sum, position) => sum + (position.profitLoss || 0), 0);
+        
+        // Calculate profit/loss from open positions
+        const openPositionsProfitLoss = openPositions.reduce((sum, position) => 
+            sum + (position.profitLoss || 0), 0);
+        
+        // Calculate profit/loss from closed positions
+        const closedPositionsProfitLoss = closedPositions.reduce((sum, position) => 
+            sum + (position.profitLoss || 0), 0);
+            
+        // Total profit/loss (combined)
+        const totalProfitLoss = openPositionsProfitLoss + closedPositionsProfitLoss;
+        
+        // Calculate total trading volume
+        const totalTrades = await prisma.orderHistory.count({
+            where: { userId }
+        });
+        
+        // Calculate total volume across all orders
+        const totalVolumeData = await prisma.orderHistory.aggregate({
+            where: { userId },
+            _sum: { tradeAmount: true }
+        });
+        
+        const totalVolume = totalVolumeData._sum.tradeAmount || 0;
 
         return NextResponse.json({
             user,
@@ -116,11 +156,16 @@ export async function GET(request: Request) {
                 baseAccountBalance,
                 totalDeposits: totalDeposits._sum.amount || 0,
                 totalWithdrawals: totalWithdrawals._sum.amount || 0,
-                profitLoss,
+                openPositionsProfitLoss,
+                closedPositionsProfitLoss,
+                totalProfitLoss,
+                totalTrades,
+                totalVolume,
                 approvedLoanAmount,
                 approvedLoanDetails: approvedLoan,
                 recentTransactions,
-                openPositions
+                openPositions,
+                closedPositions
             }
         });
     } catch (error) {

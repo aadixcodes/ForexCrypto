@@ -21,11 +21,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { orderId } = await req.json();
+    const { orderId, sellPrice } = await req.json();
 
-    if (!orderId) {
+    if (!orderId || !sellPrice) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (sellPrice <= 0) {
+      return NextResponse.json(
+        { error: "Sell price must be greater than 0" },
         { status: 400 }
       );
     }
@@ -47,16 +54,17 @@ export async function POST(req: Request) {
 
     // Calculate profit/loss
     const profitLoss = order.type === "LONG" 
-      ? (order.sellPrice! - order.buyPrice) * order.quantity
-      : (order.buyPrice - order.sellPrice!) * order.quantity;
+      ? (sellPrice - order.buyPrice) * order.quantity
+      : (order.buyPrice - sellPrice) * order.quantity;
 
-    // Update the order to CLOSED status with profit/loss
+    // Update the order to CLOSED status with sell price and profit/loss
     const updatedOrder = await prisma.orderHistory.update({
       where: {
         id: orderId,
       },
       data: {
         status: TradeStatus.CLOSED as any,
+        sellPrice: sellPrice,
         profitLoss,
       },
     });

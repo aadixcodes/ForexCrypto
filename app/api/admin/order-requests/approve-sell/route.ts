@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { TradeStatus } from "@/app/types/orders";
 
 export async function POST(req: Request) {
   try {
@@ -12,10 +13,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { orderId } = await req.json();
+    const { orderId, sellPrice } = await req.json();
     if (!orderId) {
       return NextResponse.json(
         { error: "Order ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!sellPrice || sellPrice <= 0) {
+      return NextResponse.json(
+        { error: "Valid sell price is required" },
         { status: 400 }
       );
     }
@@ -41,13 +49,14 @@ export async function POST(req: Request) {
 
     // Calculate profit/loss
     const profitLoss = 
-      (existingOrder.sellPrice as number - existingOrder.buyPrice) * existingOrder.quantity;
+      (sellPrice - existingOrder.buyPrice) * existingOrder.quantity;
 
-    // Update the order status to CLOSED and add the profit/loss
+    // Update the order status to CLOSED and add the sell price and profit/loss
     const updatedOrder = await prisma.orderHistory.update({
       where: { id: orderId },
       data: {
         status: "CLOSED" as any,
+        sellPrice: sellPrice,
         profitLoss: profitLoss,
       },
     });

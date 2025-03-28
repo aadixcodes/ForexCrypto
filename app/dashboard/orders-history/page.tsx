@@ -27,7 +27,11 @@ export default function OrdersHistoryPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/orders');
+      const response = await fetch('/api/orders', {
+        headers: {
+          'x-user-id': user?.id || ''
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }

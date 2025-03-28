@@ -136,7 +136,7 @@ export default function OrderRequestPage() {
                 name="symbol"
                 type="text"
                 required
-                placeholder="BTC/USD"
+                placeholder="BTC/INR"
                 value={formData.symbol}
                 onChange={handleChange}
                 className="w-full p-2 rounded-md border border-gray-300 bg-background"
@@ -179,7 +179,7 @@ export default function OrderRequestPage() {
 
               <div>
                 <label htmlFor="buyPrice" className="block text-sm font-medium mb-1">
-                  Buy Price (USD)
+                  Buy Price (INR)
                 </label>
                 <input
                   id="buyPrice"
@@ -199,8 +199,8 @@ export default function OrderRequestPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Total Amount:</span>
                 <div className="flex items-center gap-1 text-lg font-bold">
-                  <DollarSign className="h-4 w-4" />
-                  <span>{calculateTradeAmount().toFixed(2)}</span>
+                  
+                ₹<span>{calculateTradeAmount().toFixed(2)}</span>
                 </div>
               </div>
             </div>

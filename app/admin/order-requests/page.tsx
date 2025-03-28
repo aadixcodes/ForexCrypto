@@ -20,6 +20,8 @@ export default function AdminOrderRequestsPage() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editedBuyPrice, setEditedBuyPrice] = useState<number | null>(null);
+  const [sellPrices, setSellPrices] = useState<Record<string, number>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user?.role === "admin") {
@@ -133,6 +135,11 @@ export default function AdminOrderRequestsPage() {
   };
 
   const handleApproveSell = async (orderId: string) => {
+    if (!sellPrices[orderId]) {
+      setError("Please enter a valid sell price");
+      return;
+    }
+
     setProcessingOrderId(orderId);
     try {
       const response = await fetch(`/api/admin/order-requests/approve-sell`, {
@@ -140,7 +147,10 @@ export default function AdminOrderRequestsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ 
+          orderId,
+          sellPrice: sellPrices[orderId]
+        }),
       });
 
       if (!response.ok) {
@@ -370,9 +380,23 @@ export default function AdminOrderRequestsPage() {
           </>
         ) : order.status.toString() === "PENDING_SELL" ? (
           <>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="number"
+                value={sellPrices[order.id] || ''}
+                onChange={(e) => setSellPrices(prev => ({
+                  ...prev,
+                  [order.id]: parseFloat(e.target.value)
+                }))}
+                placeholder="Enter sell price"
+                className="w-24 p-1 border rounded text-right"
+                step="0.01"
+                min="0"
+              />
+            </div>
             <button
               onClick={() => handleApproveSell(order.id)}
-              disabled={processingOrderId === order.id}
+              disabled={processingOrderId === order.id || !sellPrices[order.id]}
               className="p-2 rounded-md bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors disabled:opacity-50 flex items-center gap-1"
             >
               <Check className="h-4 w-4" />
@@ -618,19 +642,35 @@ export default function AdminOrderRequestsPage() {
                           </>
                         ) : order.status.toString() === "PENDING_SELL" ? (
                           <>
+                            <div className="flex items-center gap-2 mb-2">
+                              <input
+                                type="number"
+                                value={sellPrices[order.id] || ''}
+                                onChange={(e) => setSellPrices(prev => ({
+                                  ...prev,
+                                  [order.id]: parseFloat(e.target.value)
+                                }))}
+                                placeholder="Enter sell price"
+                                className="w-24 p-1 border rounded text-right"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
                             <button
                               onClick={() => handleApproveSell(order.id)}
-                              disabled={processingOrderId === order.id}
-                              className="p-1 rounded-md bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors disabled:opacity-50"
+                              disabled={processingOrderId === order.id || !sellPrices[order.id]}
+                              className="p-2 rounded-md bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
                               <Check className="h-4 w-4" />
+                              <span>Approve</span>
                             </button>
                             <button
                               onClick={() => handleRejectSell(order.id)}
                               disabled={processingOrderId === order.id}
-                              className="p-1 rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                              className="p-2 rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
                               <X className="h-4 w-4" />
+                              <span>Reject</span>
                             </button>
                           </>
                         ) : null}

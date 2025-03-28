@@ -51,8 +51,17 @@ export default function SellRequestPage() {
         throw new Error(errorData.error || "Failed to submit sell request");
       }
 
+      const data = await response.json();
       setSuccess("Sell request submitted successfully. Admin will review and set the sell price.");
-      fetchOrders(); // Refresh the orders list
+      
+      // Update the orders list with the new sell price
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId 
+            ? { ...order, sellPrice: data.order.sellPrice } 
+            : order
+        )
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
@@ -166,10 +175,10 @@ export default function SellRequestPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Amount</p>
+                    <p className="text-xs text-muted-foreground">Sell Price</p>
                     <p className="font-medium flex items-center">
                       <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      {order.tradeAmount.toFixed(2)}
+                      {order.sellPrice ? order.sellPrice : '-'}
                     </p>
                   </div>
                 </div>
@@ -177,7 +186,7 @@ export default function SellRequestPage() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={() => handleSellRequest(order.id)}
-                    disabled={isSubmitting === order.id}
+                    disabled={isSubmitting === order.id || order.sellPrice !== null}
                     className="w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {isSubmitting === order.id ? "Submitting..." : "Request to Sell"}

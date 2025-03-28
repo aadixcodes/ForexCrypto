@@ -13,7 +13,8 @@ import {
   Clock,
   BarChart3,
   History,
-  Coins
+  Coins,
+  Briefcase
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth }  from "@/app/auth-context";
@@ -29,7 +30,11 @@ type DashboardData = {
   baseAccountBalance: number;
   totalDeposits: number;
   totalWithdrawals: number;
-  profitLoss: number;
+  openPositionsProfitLoss: number;
+  closedPositionsProfitLoss: number;
+  totalProfitLoss: number;
+  totalTrades: number;
+  totalVolume: number;
   approvedLoanAmount: number;
   approvedLoanDetails?: {
     amount: number;
@@ -52,6 +57,16 @@ type DashboardData = {
     tradeDate: string;
     quantity: number;
     buyPrice: number;
+  }>;
+  closedPositions: Array<{
+    id: string;
+    symbol: string;
+    type: string;
+    profitLoss: number;
+    tradeDate: string;
+    quantity: number;
+    buyPrice: number;
+    sellPrice: number;
   }>;
 };
 
@@ -120,7 +135,7 @@ export default function DashboardPage() {
     }
   };
 
-  const profitLoss = dashboardData?.profitLoss ?? 0;
+  const profitLoss = dashboardData?.totalProfitLoss ?? 0;
   const profitLossPercentage = dashboardData?.accountBalance 
     ? ((profitLoss / dashboardData.accountBalance) * 100).toFixed(2) + '%'
     : '0%';
@@ -152,7 +167,7 @@ export default function DashboardPage() {
     },
     { 
       title: "Profit/Loss", 
-      value: dashboardData ? `₹${dashboardData.profitLoss.toLocaleString()}` : "₹0", 
+      value: dashboardData ? `₹${dashboardData.totalProfitLoss?.toLocaleString() || "0"}` : "₹0", 
       change: profitLossPercentage,
       color: profitLoss >= 0 ? "text-green-400" : "text-red-400",
       icon: profitLoss >= 0 ? 
@@ -165,8 +180,7 @@ export default function DashboardPage() {
         value: `₹${dashboardData.approvedLoanAmount.toLocaleString()}`, 
         color: "text-blue-400",
         icon: <Coins className="h-5 w-5 text-primary" />,
-        subtext: dashboardData.approvedLoanDetails ? 
-          `${dashboardData.approvedLoanDetails.duration} months` : undefined
+        
       }
     ] : [])
   ];
@@ -242,7 +256,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -292,6 +306,67 @@ export default function DashboardPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
+          {/* Trading Statistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Trades</p>
+                  <p className="text-2xl font-semibold mt-2">{dashboardData?.totalTrades || 0}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Briefcase className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Trading Volume</p>
+                  <p className="text-2xl font-semibold mt-2">₹{dashboardData?.totalVolume?.toLocaleString() || 0}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Closed Positions P&L</p>
+                  <p className={`text-2xl font-semibold mt-2 ${
+                    (dashboardData?.closedPositionsProfitLoss || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    ₹{Math.abs(dashboardData?.closedPositionsProfitLoss || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/10">
+                  {(dashboardData?.closedPositionsProfitLoss || 0) >= 0 ? (
+                    <ArrowUpRight className="h-6 w-6 text-green-400" />
+                  ) : (
+                    <ArrowDownRight className="h-6 w-6 text-red-400" />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
           {/* Loan Alert for Approved Loans */}
           {dashboardData && dashboardData.approvedLoanAmount > 0 && (
             <motion.div
