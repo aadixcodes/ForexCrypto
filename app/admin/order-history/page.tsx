@@ -58,7 +58,7 @@ export default function AdminOrderHistory() {
       const response = await fetch("/api/admin/users");
       const data = await response.json();
       console.log("API Response:", data);
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(data.users);
     } catch (error) {
       console.error("Error fetching users:", error);
       setUsers([]);
@@ -492,6 +492,7 @@ export default function AdminOrderHistory() {
         onDelete={handleDeleteOrder}
         order={selectedOrder}
         mode={modalMode}
+        userId={selectedUser}
       />
     </div>
   );

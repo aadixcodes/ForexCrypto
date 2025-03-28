@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LineChart, Shield, Zap, BarChart2, Coins } from "lucide-react";
+import { LineChart, Shield, Zap, BarChart2, Coins, Layers } from "lucide-react";
 
 const features = [
   {
@@ -28,7 +28,12 @@ const features = [
     icon: <Coins className="h-6 w-6" />,
     title: "Fast Withdrawals",
     description: "Quick and hassle-free withdrawals with multiple payment options"
-  }
+  },
+  {
+    icon: <Layers className="h-6 w-6" />,
+    title: "Diverse Asset Portfolio",
+    description: "Trade forex, cryptocurrencies, commodities, and indices all in one platform."
+  }
 ];
 
 export function Benefits() {

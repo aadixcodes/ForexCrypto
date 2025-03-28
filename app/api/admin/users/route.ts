@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import nodemailer from "nodemailer";
+import { cookies } from 'next/headers';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -14,6 +15,23 @@ const transporter = nodemailer.createTransport({
 
 export async function GET() {
   try {
+    const cookieStore = cookies();
+    const userId = cookieStore.get('userId')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify the user is an admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true }
+    });
+    
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const users = await prisma.user.findMany({
       include: {
         transactions: true,

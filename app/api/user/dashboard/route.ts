@@ -87,7 +87,7 @@ export async function GET(request: Request) {
                     buyPrice: true
                 }
             }),
-            prisma.loanRequest.findFirst({
+            prisma.loanRequest.aggregate({
                 where: {
                     userId,
                     status: 'APPROVED'
@@ -95,17 +95,15 @@ export async function GET(request: Request) {
                 orderBy: {
                     updatedAt: 'desc'
                 },
-                select: {
-                    amount: true,
-                    duration: true,
-                    updatedAt: true
-                }
+                _sum: { amount: true }
             })
         ]);
 
-        // Get approved loan amount
-        const approvedLoanAmount = approvedLoan ? approvedLoan.amount : 0;
 
+        // Get approved loan amount
+        console.log(approvedLoan)
+        const approvedLoanAmount = approvedLoan ? approvedLoan._sum.amount : 0;
+        console.log(approvedLoanAmount)
         // Calculate account balance and other metrics
         const baseAccountBalance = (totalDeposits._sum.amount || 0) - (totalWithdrawals._sum.amount || 0);
         const accountBalance = baseAccountBalance + approvedLoanAmount;

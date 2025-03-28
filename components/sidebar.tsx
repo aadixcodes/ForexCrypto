@@ -41,7 +41,7 @@ export function Sidebar() {
     { name: "Charts", href: "/dashboard/livechart", icon: <BarChart className="h-5 w-5" /> },
     { name: "Transactions", href: "/dashboard/transaction", icon: <ArrowDownUp className="h-5 w-5" /> },
     { name: "Order History", href: "/dashboard/orders-history", icon: <History className="h-5 w-5" /> },
-    { name: "Request Order", href: "/dashboard/order-request", icon: <History className="h-5 w-5" /> },
+    { name: "Request to Buy", href: "/dashboard/order-request", icon: <History className="h-5 w-5" /> },
     { name: "Request to Sell", href: "/dashboard/sell-request", icon: <ArrowDownUp className="h-5 w-5" /> },
     { name: "Deposit", href: "/dashboard/deposit", icon: <CircleDollarSign className="h-5 w-5" /> },
     { name: "Withdraw", href: "/dashboard/withdraw", icon: <Wallet className="h-5 w-5" /> },
