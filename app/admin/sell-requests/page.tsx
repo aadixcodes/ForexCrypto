@@ -215,7 +215,7 @@ export default function AdminSellRequestsPage() {
                           ? "text-green-500" 
                           : "text-red-500"
                       }>
-                        {calculateProfitLoss(order, sellPrices[order.id]).toFixed(2)} USD
+                        {calculateProfitLoss(order, sellPrices[order.id]).toFixed(2)} INR
                       </span>
                     </p>
                   </div>
