@@ -98,6 +98,23 @@ export async function PUT(request: Request) {
       );
     }
 
+    // If trying to deactivate, check if there's at least one other active UPI
+    if (existingPaymentInfo.isActive && isActive === false) {
+      const activeCount = await prisma.paymentInfo.count({
+        where: {
+          type: 'UPI',
+          isActive: true
+        }
+      });
+
+      if (activeCount <= 1) {
+        return NextResponse.json(
+          { success: false, message: 'Cannot deactivate the only active UPI account' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update the payment info
     const updatedPaymentInfo = await prisma.paymentInfo.update({
       where: { id },
@@ -122,11 +139,46 @@ export async function PUT(request: Request) {
           isActive: false
         }
       });
+    } else {
+      // If we're deactivating this one, ensure there's at least one active UPI
+      const activeExists = await prisma.paymentInfo.findFirst({
+        where: {
+          type: 'UPI',
+          isActive: true
+        }
+      });
+
+      if (!activeExists) {
+        // Activate the most recently updated UPI
+        const mostRecent = await prisma.paymentInfo.findFirst({
+          where: {
+            type: 'UPI',
+            id: {
+              not: id
+            }
+          },
+          orderBy: {
+            updatedAt: 'desc'
+          }
+        });
+
+        if (mostRecent) {
+          await prisma.paymentInfo.update({
+            where: { id: mostRecent.id },
+            data: { isActive: true }
+          });
+        }
+      }
     }
+
+    // Fetch the final state after all updates
+    const finalPaymentInfo = await prisma.paymentInfo.findUnique({
+      where: { id }
+    });
 
     return NextResponse.json({
       success: true,
-      paymentInfo: updatedPaymentInfo,
+      paymentInfo: finalPaymentInfo,
       message: 'Payment information updated successfully'
     });
   } catch (error) {
@@ -151,7 +203,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Check if the payment info exists
+    // Check if the payment info exists and if it's active
     const existingPaymentInfo = await prisma.paymentInfo.findUnique({
       where: { id }
     });
@@ -161,6 +213,30 @@ export async function DELETE(request: Request) {
         { success: false, message: 'Payment information not found' },
         { status: 404 }
       );
+    }
+
+    // If trying to delete an active UPI, ensure there's another one to activate
+    if (existingPaymentInfo.isActive) {
+      const alternativeUPI = await prisma.paymentInfo.findFirst({
+        where: {
+          type: 'UPI',
+          id: { not: id }
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      if (!alternativeUPI) {
+        return NextResponse.json(
+          { success: false, message: 'Cannot delete the only UPI account' },
+          { status: 400 }
+        );
+      }
+
+      // Activate the alternative UPI before deleting this one
+      await prisma.paymentInfo.update({
+        where: { id: alternativeUPI.id },
+        data: { isActive: true }
+      });
     }
 
     // Delete the payment info

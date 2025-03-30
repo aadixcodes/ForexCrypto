@@ -5,28 +5,41 @@ import prisma from '@/lib/prisma';
 export async function GET() {
   try {
     // Find active UPI payment info
-    const paymentInfo = await prisma.paymentInfo.findFirst({
+    let paymentInfo = await prisma.paymentInfo.findFirst({
       where: { 
         type: 'UPI',
         isActive: true
       },
+      orderBy: {
+        updatedAt: 'desc'
+      }
     });
 
-    // If no active UPI payment info is found, create a default one
+    // If no active UPI payment info is found
     if (!paymentInfo) {
-      const defaultPaymentInfo = await prisma.paymentInfo.create({
-        data: {
-          type: 'UPI',
-          upiId: 'developer.aditya09@oksbi',
-          merchantName: 'Astex',
-          isActive: true,
-        }
+      // Find any existing UPI payment info
+      const existingUPI = await prisma.paymentInfo.findFirst({
+        where: { type: 'UPI' },
+        orderBy: { updatedAt: 'desc' }
       });
-      
-      return NextResponse.json({
-        success: true,
-        paymentInfo: defaultPaymentInfo
-      });
+
+      if (existingUPI) {
+        // Activate the most recent UPI
+        paymentInfo = await prisma.paymentInfo.update({
+          where: { id: existingUPI.id },
+          data: { isActive: true }
+        });
+      } else {
+        // Create a default one if none exists
+        paymentInfo = await prisma.paymentInfo.create({
+          data: {
+            type: 'UPI',
+            upiId: 'developer.aditya09@oksbi',
+            merchantName: 'Astex',
+            isActive: true,
+          }
+        });
+      }
     }
 
     // Set cache control headers
@@ -43,7 +56,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching payment info:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch payment information' },
+      { success: false, message: 'Failed to fetch payment information' },
       { status: 500 }
     );
   }
