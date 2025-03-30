@@ -1,6 +1,6 @@
 'use client';
 import { motion } from "framer-motion";
-import { Bell, UserCircle, CheckCircle2, AlertTriangle, DollarSign } from "lucide-react";
+import { Bell, UserCircle, CheckCircle2, AlertTriangle, IndianRupee  } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Menu, Transition } from '@headlessui/react'
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
