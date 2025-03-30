@@ -10,6 +10,9 @@ import { useAuth } from "@/app/auth-context";
 type ExtendedOrder = Order & {
   userName?: string;
   accountBalance?: number;
+  baseAccountBalance?: number;
+  approvedLoanAmount?: number;
+  totalOrdersAmount?: number;
 };
 
 export default function AdminOrderRequestsPage() {
@@ -46,8 +49,12 @@ export default function AdminOrderRequestsPage() {
             if (userResponse.ok) {
               const userData = await userResponse.json();
               
-              // Calculate account balance from user transactions
-              let accountBalance = 0;
+              // Calculate balance components
+              let baseAccountBalance = 0;
+              let approvedLoanAmount = 0;
+              let totalOrdersAmount = 0;
+              
+              // Calculate deposits minus withdrawals (base account balance)
               if (userData.user.transactions) {
                 const deposits = userData.user.transactions
                   .filter((t: any) => t.type === 'DEPOSIT' && t.status === 'COMPLETED' && t.verified === true)
@@ -57,13 +64,34 @@ export default function AdminOrderRequestsPage() {
                   .filter((t: any) => t.type === 'WITHDRAW' && t.status === 'COMPLETED')
                   .reduce((sum: number, t: any) => sum + t.amount, 0);
                 
-                accountBalance = deposits - withdrawals;
+                baseAccountBalance = deposits - withdrawals;
               }
+              
+              // Calculate approved loan amount
+              if (userData.user.loanRequests) {
+                approvedLoanAmount = userData.user.loanRequests
+                  .filter((loan: any) => loan.status === 'APPROVED')
+                  .reduce((sum: number, loan: any) => sum + loan.amount, 0);
+              }
+              
+              // Calculate total order amounts (open and closed)
+              if (userData.user.orders) {
+                totalOrdersAmount = userData.user.orders
+                  .filter((o: any) => o.status === 'OPEN' || o.status === 'CLOSED')
+                  .reduce((sum: number, o: any) => sum + o.tradeAmount, 0);
+              }
+              
+              // Calculate final account balance using the formula:
+              // Deposits + Loans - Withdrawals - Order Amounts
+              const accountBalance = baseAccountBalance + approvedLoanAmount - totalOrdersAmount;
               
               return { 
                 ...order, 
                 userName: userData.user.name || 'Unknown',
-                accountBalance
+                accountBalance,
+                baseAccountBalance,
+                approvedLoanAmount,
+                totalOrdersAmount
               };
             }
             return order;
@@ -274,7 +302,21 @@ export default function AdminOrderRequestsPage() {
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Balance</p>
-          <p className="font-medium">${order.accountBalance?.toFixed(2) || '0.00'}</p>
+          <div>
+            <p className="font-medium">₹{order.accountBalance?.toFixed(2) || '0.00'}</p>
+            {((order.approvedLoanAmount && order.approvedLoanAmount > 0) || 
+              (order.totalOrdersAmount && order.totalOrdersAmount > 0)) && (
+              <div className="text-xs text-muted-foreground mt-1">
+                <div>Base: ₹{(order.baseAccountBalance || 0).toFixed(2)}</div>
+                {order.approvedLoanAmount && order.approvedLoanAmount > 0 && (
+                  <div>Loan: +₹{order.approvedLoanAmount.toFixed(2)}</div>
+                )}
+                {order.totalOrdersAmount && order.totalOrdersAmount > 0 && (
+                  <div>Orders: -${order.totalOrdersAmount.toFixed(2)}</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Symbol</p>
@@ -548,7 +590,21 @@ export default function AdminOrderRequestsPage() {
                       {order.userName || `${order.userId.substring(0, 8)}...`}
                     </td>
                     <td className="p-3 text-right">
-                      ${order.accountBalance?.toFixed(2) || '0.00'}
+                      <div>
+                      ₹{order.accountBalance?.toFixed(2) || '0.00'}
+                        {((order.approvedLoanAmount && order.approvedLoanAmount > 0) || 
+                          (order.totalOrdersAmount && order.totalOrdersAmount > 0)) && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            <div>Base: ₹{(order.baseAccountBalance || 0).toFixed(2)}</div>
+                            {order.approvedLoanAmount && order.approvedLoanAmount > 0 && (
+                              <div>Loan: +₹{order.approvedLoanAmount.toFixed(2)}</div>
+                            )}
+                            {order.totalOrdersAmount && order.totalOrdersAmount > 0 && (
+                              <div>Orders: -₹{order.totalOrdersAmount.toFixed(2)}</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3 font-medium">{order.symbol}</td>
                     <td className="p-3 text-right">{order.quantity}</td>
@@ -564,7 +620,7 @@ export default function AdminOrderRequestsPage() {
                         />
                       ) : (
                         <div className="flex items-center justify-end gap-2">
-                          ${order.buyPrice}
+                          ₹{order.buyPrice}
                           {order.status.toString() === "PENDING" && (
                             <button
                               onClick={() => startEditing(order)}
@@ -577,7 +633,7 @@ export default function AdminOrderRequestsPage() {
                       )}
                     </td>
                     <td className="p-3 text-right">
-                      {order.sellPrice ? `$${order.sellPrice}` : "-"}
+                      {order.sellPrice ? `₹${order.sellPrice}` : "-"}
                     </td>
                     <td className="p-3">
                       <span
@@ -591,7 +647,7 @@ export default function AdminOrderRequestsPage() {
                       </span>
                     </td>
                     <td className="p-3 text-right">
-                      ${order.tradeAmount.toFixed(2)}
+                    ₹{order.tradeAmount.toFixed(2)}
                     </td>
                     <td className="p-3">
                       <span

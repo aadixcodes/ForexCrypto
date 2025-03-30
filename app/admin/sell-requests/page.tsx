@@ -170,17 +170,17 @@ export default function AdminSellRequestsPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Buy Price</p>
-                    <p className="font-medium">${order.buyPrice}</p>
+                    <p className="font-medium">₹{order.buyPrice}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col md:flex-row md:items-end gap-4 mt-4">
                   <div className="flex-1">
                     <label htmlFor={`sellPrice-${order.id}`} className="block text-sm font-medium mb-1">
-                      Set Sell Price ($)
+                      Set Sell Price (₹)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₹</span>
                       <input
                         id={`sellPrice-${order.id}`}
                         type="number"

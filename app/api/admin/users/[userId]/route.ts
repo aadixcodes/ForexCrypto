@@ -128,6 +128,7 @@ export async function GET(
       include: {
         transactions: true,
         orders: true,
+        loanRequests: true,
       },
     });
     
