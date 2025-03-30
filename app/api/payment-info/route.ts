@@ -29,10 +29,17 @@ export async function GET() {
       });
     }
 
+    // Set cache control headers
+    const headers = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    };
+
     return NextResponse.json({
       success: true,
       paymentInfo
-    });
+    }, { headers });
   } catch (error) {
     console.error('Error fetching payment info:', error);
     return NextResponse.json(

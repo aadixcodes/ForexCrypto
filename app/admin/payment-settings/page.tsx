@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PlusCircle, Edit, Check, X, AlertCircle, CheckCircle } from "lucide-react";
+import { PlusCircle, Edit, Check, X, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 
 type PaymentInfo = {
   id: string;
@@ -27,6 +27,9 @@ export default function PaymentSettingsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editUpiId, setEditUpiId] = useState("");
   const [editMerchantName, setEditMerchantName] = useState("");
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch payment info list
   const fetchPaymentInfoList = async () => {
@@ -174,6 +177,46 @@ export default function PaymentSettingsPage() {
       console.error(err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle delete with active check
+  const handleDeletePaymentInfo = async (id: string) => {
+    // Check if trying to delete the only active account
+    const paymentInfo = paymentInfoList.find(info => info.id === id);
+    if (paymentInfo?.isActive && paymentInfoList.filter(info => info.isActive).length <= 1) {
+      setError("Cannot delete the only active UPI account. Please activate another account first.");
+      setDeleteId(null);
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const response = await fetch("/api/admin/payment-info", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ id }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess("UPI payment information deleted successfully");
+        setDeleteId(null);
+        await fetchPaymentInfoList();
+      } else {
+        setError(data.message || "Failed to delete UPI payment information");
+      }
+    } catch (err) {
+      setError("An error occurred while deleting UPI payment information");
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -365,6 +408,18 @@ export default function PaymentSettingsPage() {
                         >
                           {paymentInfo.isActive ? "Deactivate" : "Activate"}
                         </button>
+                        <button
+                          onClick={() => setDeleteId(paymentInfo.id)}
+                          disabled={paymentInfo.isActive && paymentInfoList.filter(info => info.isActive).length <= 1}
+                          className={`text-red-400 hover:text-red-300 p-1.5 rounded-lg hover:bg-red-400/10 transition-all duration-200 ${
+                            paymentInfo.isActive && paymentInfoList.filter(info => info.isActive).length <= 1 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : ''
+                          }`}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
                       </>
                     )}
                   </td>
@@ -374,6 +429,34 @@ export default function PaymentSettingsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-background/95 border border-border/50 p-6 rounded-xl shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold mb-2 text-foreground">Confirm Deletion</h3>
+            <p className="text-foreground/70 mb-6">
+              Are you sure you want to delete this UPI payment information? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 rounded-lg bg-background/50 border border-border/50 hover:bg-background/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeletePaymentInfo(deleteId)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

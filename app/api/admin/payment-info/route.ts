@@ -136,4 +136,47 @@ export async function PUT(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// Delete UPI payment info
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const { id } = body;
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'Payment info ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if the payment info exists
+    const existingPaymentInfo = await prisma.paymentInfo.findUnique({
+      where: { id }
+    });
+
+    if (!existingPaymentInfo) {
+      return NextResponse.json(
+        { success: false, message: 'Payment information not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the payment info
+    await prisma.paymentInfo.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Payment information deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting payment info:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete payment information' },
+      { status: 500 }
+    );
+  }
 } 

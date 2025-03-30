@@ -31,7 +31,12 @@ export default function DepositPage() {
     const fetchPaymentInfo = async () => {
       setIsLoadingPaymentInfo(true);
       try {
-        const response = await fetch("/api/payment-info");
+        const response = await fetch("/api/payment-info", {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         const data = await response.json();
         
         if (data.success && data.paymentInfo) {
