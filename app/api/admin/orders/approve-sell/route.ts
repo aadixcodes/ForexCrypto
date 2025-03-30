@@ -53,9 +53,7 @@ export async function POST(req: Request) {
     }
 
     // Calculate profit/loss
-    const profitLoss = order.type === "LONG" 
-      ? (sellPrice - order.buyPrice) * order.quantity
-      : (order.buyPrice - sellPrice) * order.quantity;
+    const profitLoss = (sellPrice - order.buyPrice) * order.quantity;
 
     // Update the order to CLOSED status with sell price and profit/loss
     const updatedOrder = await prisma.orderHistory.update({

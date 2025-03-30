@@ -27,7 +27,8 @@ export async function GET(request: Request) {
             recentTransactions,
             openPositions,
             closedPositions,
-            approvedLoan
+            approvedLoan,
+            verifiedOrdersAmount
         ] = await Promise.all([
             prisma.transaction.aggregate({
                 where: {
@@ -85,7 +86,8 @@ export async function GET(request: Request) {
                     profitLoss: true,
                     tradeDate: true,
                     quantity: true,
-                    buyPrice: true
+                    buyPrice: true,
+                    tradeAmount: true
                 }
             }),
             prisma.orderHistory.findMany({
@@ -103,7 +105,8 @@ export async function GET(request: Request) {
                     tradeDate: true,
                     quantity: true,
                     buyPrice: true,
-                    sellPrice: true
+                    sellPrice: true,
+                    tradeAmount: true
                 }
             }),
             prisma.loanRequest.aggregate({
@@ -115,15 +118,28 @@ export async function GET(request: Request) {
                     updatedAt: 'desc'
                 },
                 _sum: { amount: true }
+            }),
+            prisma.orderHistory.aggregate({
+                where: {
+                    userId,
+                    OR: [
+                        { status: 'OPEN' },
+                        { status: 'CLOSED' }
+                    ]
+                },
+                _sum: { tradeAmount: true }
             })
         ]);
 
-        // Get approved loan amount (fixing the TypeScript error)
+        // Get approved loan amount 
         const approvedLoanAmount = approvedLoan?._sum?.amount ?? 0;
+        
+        // Get total amount for all verified orders (open and closed)
+        const totalOrdersAmount = verifiedOrdersAmount?._sum?.tradeAmount ?? 0;
         
         // Calculate account balance and other metrics
         const baseAccountBalance = (totalDeposits._sum.amount || 0) - (totalWithdrawals._sum.amount || 0);
-        const accountBalance = baseAccountBalance + approvedLoanAmount;
+        const accountBalance = baseAccountBalance + approvedLoanAmount - totalOrdersAmount;
         
         // Calculate profit/loss from open positions
         const openPositionsProfitLoss = openPositions.reduce((sum, position) => 
@@ -162,6 +178,7 @@ export async function GET(request: Request) {
                 totalTrades,
                 totalVolume,
                 approvedLoanAmount,
+                totalOrdersAmount,
                 approvedLoanDetails: approvedLoan,
                 recentTransactions,
                 openPositions,

@@ -83,11 +83,8 @@ export default function AdminSellRequestsPage() {
 
   // Helper function to calculate P&L based on order type and prices
   const calculateProfitLoss = (order: Order, sellPrice: number): number => {
-    if (order.type === "LONG") {
-      return (sellPrice - order.buyPrice) * order.quantity;
-    } else {
-      return (order.buyPrice - sellPrice) * order.quantity;
-    }
+    // Same calculation for all order types
+    return (sellPrice - order.buyPrice) * order.quantity;
   };
 
   if (isLoading) {
@@ -163,10 +160,7 @@ export default function AdminSellRequestsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Type</p>
                     <p className="font-medium flex items-center gap-1">
-                      {order.type === "LONG" ? 
-                        <TrendingUp className="h-4 w-4 text-green-500" /> : 
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                      }
+                      <TrendingUp className="h-4 w-4 text-green-500" />
                       {order.type}
                     </p>
                   </div>
