@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import TradingViewWidget from "@/components/trading-view-widget";
-import { IndianRupee , Activity, Timer, BarChart, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from "lucide-react";
+import { DollarSign, Activity, Timer, BarChart, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from "lucide-react";
 
 const marketData = [
   { symbol: "BTC/USD", price: "42,300", change: "+2.4%", volume: "24B", color: "text-green-400" },

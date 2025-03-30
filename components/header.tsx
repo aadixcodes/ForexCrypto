@@ -1,6 +1,6 @@
 'use client';
 import { motion } from "framer-motion";
-import { Bell, UserCircle, CheckCircle2, AlertTriangle, IndianRupee  } from "lucide-react";
+import { Bell, UserCircle, CheckCircle2, AlertTriangle, DollarSign } from "lucide-react";
 import { useState } from "react";
 import { Menu, Transition } from '@headlessui/react'
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
@@ -110,7 +110,7 @@ export function Header() {
                                   ) : notification.type === 'warning' ? (
                                     <AlertTriangle className="h-5 w-5 text-yellow-400" />
                                   ) : (
-                                    <IndianRupee  className="h-5 w-5 text-blue-400" />
+                                   <IndianRupee  className="h-5 w-5 text-blue-400" />
                                   )}
                                 </div>
                                 <div className="flex-1">

@@ -496,7 +496,7 @@ export default function AdminOrderRequestsPage() {
       <div className="bg-background/80 backdrop-blur-lg rounded-xl border shadow-sm overflow-hidden">
         <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
-            <IndianRupee  className="h-5 w-5 text-primary" />
+           <IndianRupee  className="h-5 w-5 text-primary" />
             Pending Requests
           </h3>
           <div className="flex items-center gap-4 text-sm">

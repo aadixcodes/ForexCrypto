@@ -299,7 +299,7 @@ export default function OrdersHistoryPage() {
                           onClick={() => openSellModal(order)}
                           className="p-2 rounded-md bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
                         >
-                          <IndianRupee  className="h-4 w-4" />
+                         <IndianRupee  className="h-4 w-4" />
                         </button>
                       )}
                     </td>

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-context";
 import { TradeType } from "@/app/types/orders";
-import { IndianRupee  } from "lucide-react";
+import { DollarSign } from "lucide-react";
 
 export default function OrderRequestPage() {
   const router = useRouter();

@@ -170,14 +170,14 @@ export default function SellRequestPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Buy Price</p>
                     <p className="font-medium flex items-center">
-                      <IndianRupee  className="h-3 w-3 text-muted-foreground" />
+                     <IndianRupee  className="h-3 w-3 text-muted-foreground" />
                       {order.buyPrice}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Sell Price</p>
                     <p className="font-medium flex items-center">
-                      <IndianRupee  className="h-3 w-3 text-muted-foreground" />
+                     <IndianRupee  className="h-3 w-3 text-muted-foreground" />
                       {order.sellPrice ? order.sellPrice : '-'}
                     </p>
                   </div>
