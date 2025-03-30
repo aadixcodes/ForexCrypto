@@ -94,7 +94,7 @@ export async function GET(request: Request) {
         const formattedWithdrawals = recentWithdrawalRequests.map(withdrawal => ({
             id: withdrawal.id,
             user: withdrawal.user.name,
-            amount: `$${withdrawal.amount.toLocaleString()}`,
+            amount: `₹${withdrawal.amount.toLocaleString()}`,
             date: new Date(withdrawal.timestamp).toISOString().split('T')[0],
             status: 'Pending'
         }));
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
         const formattedLoans = loanApplications.map(loan => ({
             id: loan.id,
             user: loan.user.name,
-            amount: `$${loan.amount.toLocaleString()}`,
+            amount: `₹${loan.amount.toLocaleString()}`,
             leverage: "1:10", // This would come from actual data in a real app
             date: new Date(loan.createdAt).toISOString().split('T')[0]
         }));
@@ -126,14 +126,14 @@ export async function GET(request: Request) {
                 },
                 { 
                     title: "Pending Withdrawals", 
-                    value: `$${totalPendingWithdrawalAmount.toLocaleString()}`, 
+                    value: `₹${totalPendingWithdrawalAmount.toLocaleString()}`, 
                     change: `${pendingWithdrawals.length} requests`, 
                     color: "text-yellow-400",
                     icon: "Wallet"
                 },
                 { 
                     title: "Pending Loans", 
-                    value: `$${totalPendingLoanAmount.toLocaleString()}`, 
+                    value: `₹${totalPendingLoanAmount.toLocaleString()}`, 
                     change: `${pendingLoans.length} requests`, 
                     color: "text-purple-400",
                     icon: "Coins"

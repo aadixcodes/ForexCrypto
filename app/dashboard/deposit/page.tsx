@@ -9,10 +9,9 @@ import LoadingOverlay from "@/components/ui/loading-overlay";
 
 type PaymentInfo = {
   id: string;
+  type: string;
   upiId: string;
   merchantName: string;
-  type: string;
-  isActive: boolean;
 };
 
 export default function DepositPage() {
