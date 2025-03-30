@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import TradingViewWidget from "@/components/trading-view-widget";
 import { 
-  DollarSign, 
+  IndianRupee , 
   ArrowUpRight, 
   ArrowDownRight, 
   TrendingUp, 
@@ -152,7 +152,7 @@ export default function DashboardPage() {
       title: "Account Balance", 
       value: dashboardData ? `₹${dashboardData.accountBalance.toLocaleString()}` : "₹0", 
       color: "text-green-400",
-      icon: <DollarSign className="h-5 w-5 text-primary" />,
+      icon: <IndianRupee  className="h-5 w-5 text-primary" />,
       tooltip: "Deposits + Loans - Withdrawals - Order Amounts"
     },
     { 

@@ -244,7 +244,7 @@ export default function DepositVerificationPage() {
                       </a>
                     </div>
                   </td>
-                  <td className="p-3 font-medium">${transaction.amount.toFixed(2)}</td>
+                  <td className="p-3 font-medium">₹{transaction.amount.toFixed(2)}</td>
                   <td className="p-3 text-muted-foreground">
                     {new Date(transaction.timestamp).toLocaleString()}
                   </td>
