@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Coins, BarChart, Calendar, ArrowUpRight, ArrowDownRight, DollarSign } from "lucide-react";
+import { Briefcase, Coins, BarChart, Calendar, ArrowUpRight, ArrowDownRight, IndianRupee  } from "lucide-react";
 import { Order } from "@/app/types/orders";
 import { useAuth } from "@/app/auth-context";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -299,7 +299,7 @@ export default function OrdersHistoryPage() {
                           onClick={() => openSellModal(order)}
                           className="p-2 rounded-md bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
                         >
-                          <DollarSign className="h-4 w-4" />
+                          <IndianRupee  className="h-4 w-4" />
                         </button>
                       )}
                     </td>

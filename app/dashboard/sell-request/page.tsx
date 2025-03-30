@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/app/auth-context";
 import { Order, TradeStatus } from "@/app/types/orders";
-import { TrendingUp, TrendingDown, DollarSign, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, IndianRupee , Calendar } from "lucide-react";
 
 export default function SellRequestPage() {
   const { user, isLoading } = useAuth();
@@ -170,14 +170,14 @@ export default function SellRequestPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Buy Price</p>
                     <p className="font-medium flex items-center">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <IndianRupee  className="h-3 w-3 text-muted-foreground" />
                       {order.buyPrice}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Sell Price</p>
                     <p className="font-medium flex items-center">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <IndianRupee  className="h-3 w-3 text-muted-foreground" />
                       {order.sellPrice ? order.sellPrice : '-'}
                     </p>
                   </div>

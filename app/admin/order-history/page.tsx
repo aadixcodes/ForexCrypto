@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User } from "@prisma/client";
-import { Calendar, Users, Pencil, X, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Calendar, Users, Pencil, X, TrendingUp, TrendingDown, IndianRupee  } from "lucide-react";
 import { EditOrderModal } from "@/app/components/EditOrderModal";
 import { Order, NewOrder, TradeType, TradeStatus } from "@/app/types/orders";
 
@@ -236,14 +236,14 @@ export default function AdminOrderHistory() {
         <div>
           <p className="text-xs text-muted-foreground">Buy Price</p>
           <p className="font-medium flex items-center">
-            <DollarSign className="h-3 w-3 text-muted-foreground" />
+            <IndianRupee  className="h-3 w-3 text-muted-foreground" />
             {order.buyPrice}
           </p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Sell Price</p>
           <p className="font-medium flex items-center">
-            <DollarSign className="h-3 w-3 text-muted-foreground" />
+            <IndianRupee  className="h-3 w-3 text-muted-foreground" />
             {order.sellPrice ? order.sellPrice : '-'}
           </p>
         </div>
