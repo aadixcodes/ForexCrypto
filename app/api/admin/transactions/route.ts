@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
@@ -41,6 +39,15 @@ export async function GET(request: Request) {
     // Get transactions
     const transactions = await prisma.transaction.findMany({
       where,
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            phone: true
+          }
+        }
+      },
       orderBy: {
         timestamp: 'desc',
       },

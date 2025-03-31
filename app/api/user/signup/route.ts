@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
     const { email, password,firstName,lastName, phone, aadharNo, pan, gender, dob, nomineeName, nomineeRelation, nomineeDob, bankName, accountNumber, accountHolder, ifscCode, address } = await request.json();
@@ -52,10 +50,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ message: 'User created successfully', user: { id: user.id, email: user.email, name: user.name } }, { status: 201 });
     } catch (error) {
-        if (error instanceof Error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        } else {
-            return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
-        }
+        console.error('Signup error:', error);
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'An unexpected error occurred' }, { status: 500 });
     }
 } 

@@ -1,35 +1,25 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
-const prisma = new PrismaClient();
+export async function GET(request: Request) {
+    const userId = request.headers.get('X-User-Id');
 
-export async function GET() {
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
-        const cookieStore = cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {
+                id: true,
                 name: true,
                 email: true,
                 phone: true,
-                gender: true,
-                dob: true,
-                address: true,
-                aadharNo: true,
-                bankName: true,
-                accountHolder: true,
-                accountNumber: true,
-                ifscCode: true,
-                pan: true,
-                nomineeName: true,
-                nomineeRelation: true,
+                isVerified: true,
+                role: true,
+                status: true
             }
         });
 
@@ -37,31 +27,10 @@ export async function GET() {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Transform the data to match frontend structure
-        const transformedUser = {
-            firstName: user.name.split(' ')[0],
-            lastName: user.name.split(' ').slice(1).join(' '),
-            email: user.email,
-            username: user.email.split('@')[0], // Using email as username
-            gender: user.gender,
-            mobile: user.phone,
-            aadhar: user.aadharNo,
-            dob: user.dob.toISOString(),
-            address: user.address,
-            bankName: user.bankName,
-            accountHolder: user.accountHolder,
-            accountNumber: user.accountNumber,
-            ifsc: user.ifscCode,
-            pan: user.pan,
-            nomineeName: user.nomineeName,
-            nomineeRelation: user.nomineeRelation,
-            nomineeDob: user.dob.toISOString(), // You might want to add nomineeDob to your schema
-        };
-
-        return NextResponse.json(transformedUser);
+        return NextResponse.json(user);
     } catch (error) {
-        console.error('API Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('Error fetching user:', error);
+        return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
     }
 }
 

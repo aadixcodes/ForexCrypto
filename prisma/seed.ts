@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 async function main() {
   // Create default UPI payment info if it doesn't exist
