@@ -474,6 +474,20 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ) : null}
+
+                {dashboardData?.totalProfitLoss !== undefined && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-3 w-3 rounded-full ${dashboardData.totalProfitLoss >= 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span>Profit/Loss</span>
+                      </div>
+                      <span className={`text-sm font-medium ${dashboardData.totalProfitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {dashboardData.totalProfitLoss >= 0 ? '+' : '-'}₹{Math.abs(dashboardData.totalProfitLoss).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="pt-2 mt-2 border-t border-dashed">
                   <div className="flex items-center justify-between">
@@ -481,7 +495,10 @@ export default function DashboardPage() {
                       <span>Available Balance</span>
                     </div>
                     <span className="font-semibold">
-                      ₹{dashboardData?.accountBalance.toLocaleString() || "0"}
+                      ₹{((dashboardData?.baseAccountBalance || 0) + 
+                         (dashboardData?.approvedLoanAmount || 0) - 
+                         (dashboardData?.totalOrdersAmount || 0) + 
+                         (dashboardData?.totalProfitLoss || 0)).toLocaleString()}
                     </span>
                   </div>
                 </div>
