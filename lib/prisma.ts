@@ -1,23 +1,25 @@
 import { PrismaClient } from "@prisma/client";
 
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit.
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
-// Connection pooling configuration with better error handling
 const prismaClientSingleton = () => {
   return new PrismaClient({
-    log: process.env.NODE_ENV === "production" ? ["error"] : ["query", "error"],
+    log: process.env.NODE_ENV === "production" ? ["error"] : ["query", "error", "warn"],
+    // Configure better connection handling for serverless
     datasources: {
       db: {
         url: process.env.DATABASE_URL
       }
-    },
-    errorFormat: 'pretty',
+    }
   });
 };
 
+// Use the singleton pattern to prevent multiple instances
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-// Important for Next.js - prevent multiple instances during development
+// Important for Next.js in development mode - prevent multiple instances
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 // Don't connect in the singleton to avoid issues during build
