@@ -150,10 +150,13 @@ export default function DashboardPage() {
   const stats = [
     { 
       title: "Account Balance", 
-      value: dashboardData ? `₹${dashboardData.accountBalance.toLocaleString()}` : "₹0", 
+      value: dashboardData ? `₹${((dashboardData.baseAccountBalance || 0) + 
+                                 (dashboardData.approvedLoanAmount || 0) - 
+                                 (dashboardData.totalOrdersAmount || 0) + 
+                                 (dashboardData.totalProfitLoss || 0)).toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <IndianRupee  className="h-5 w-5 text-primary" />,
-      tooltip: "Deposits + Loans - Withdrawals - Order Amounts"
+      tooltip: "Base Balance + Loan - Orders + Profit/Loss"
     },
     { 
       title: "Total Deposits", 
