@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             }, { status: 401 });
         }
 
-        if (user.status === 'PENDING') {
+        if (user.isVerified === 'FALSE') {
             return NextResponse.json({ 
                 success: false,
                 error: 'Account pending approval' 

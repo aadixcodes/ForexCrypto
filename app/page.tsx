@@ -7,7 +7,7 @@ import LoanApprovalBanner from './components/LoanApprovalBanner';
 
 export default function Home() {
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full overflow-x-hidden">
       <LoanApprovalBanner />
       <HeroSection />
       <Benefits />

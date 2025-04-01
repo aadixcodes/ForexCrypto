@@ -74,7 +74,7 @@ export async function POST(request: Request) {
                 accountHolder,
                 ifscCode,
                 address,
-                status: 'PENDING'
+                status: 'ACTIVE'
             },
         });
 

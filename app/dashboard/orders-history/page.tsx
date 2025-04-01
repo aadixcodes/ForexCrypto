@@ -127,6 +127,7 @@ export default function OrdersHistoryPage() {
     }
     return sum;
   }, 0);
+  const totalInvestment = orders.reduce((sum, o) => sum + (o.buyPrice * o.quantity), 0);
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'ALL') return true;
@@ -145,6 +146,8 @@ export default function OrdersHistoryPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        
+        
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -161,14 +164,21 @@ export default function OrdersHistoryPage() {
           </div>
         </motion.div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Trading Volume</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold mt-2">₹{totalVolume.toLocaleString()}</p>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Investments</p>
+              <p className="text-2xl font-semibold mt-2">₹{totalInvestment.toLocaleString()}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Coins className="h-6 w-6 text-primary" />
+            </div>
+          </div>
+        </motion.div>
         
         <Card>
           <CardHeader>

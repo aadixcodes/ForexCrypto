@@ -87,7 +87,7 @@ export default function AdminOrderHistory() {
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/admin/orders", {
+      const response = await fetch("/api/admin/ordersaa", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -255,7 +255,7 @@ export default function AdminOrderHistory() {
           <p className={`font-medium ${
             order.profitLoss && order.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
           }`}>
-            {order.profitLoss ? `$${order.profitLoss.toFixed(2)}` : '-'}
+            {order.profitLoss ? `${order.profitLoss.toFixed(2)}` : '-'}
           </p>
         </div>
       </div>
@@ -446,9 +446,9 @@ export default function AdminOrderHistory() {
                     </td>
                     <td className="p-3">{order.symbol}</td>
                     <td className="p-3 text-right">{order.quantity}</td>
-                    <td className="p-3 text-right">${order.buyPrice}</td>
+                    <td className="p-3 text-right">₹{order.buyPrice}</td>
                     <td className="p-3 text-right">
-                      {order.sellPrice ? `$${order.sellPrice}` : '-'}
+                      {order.sellPrice ? `₹${order.sellPrice}` : '-'}
                     </td>
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${
@@ -460,7 +460,7 @@ export default function AdminOrderHistory() {
                     <td className={`p-3 text-right ${
                       order.profitLoss && order.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {order.profitLoss ? `$${order.profitLoss.toFixed(2)}` : '-'}
+                      {order.profitLoss ? `${order.profitLoss.toFixed(2)}` : '-'}
                     </td>
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${

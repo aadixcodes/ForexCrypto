@@ -36,6 +36,8 @@ type DashboardData = {
   totalTrades: number;
   totalVolume: number;
   approvedLoanAmount: number;
+  totalOpenOrdersAmount: number;
+  totalClosedOrdersAmount: number;
   totalOrdersAmount: number;
   approvedLoanDetails?: {
     amount: number;
@@ -79,6 +81,22 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Calculate open positions metrics
+  const openTradesCount = dashboardData?.openPositions?.length || 0;
+  const openTradesInvestment = dashboardData?.openPositions?.reduce(
+    (sum, position) => sum + (position.quantity * position.buyPrice), 
+    0
+  ) || 0;
+
+  // Calculate total investments done
+  const totalInvestmentsDone = (dashboardData?.openPositions?.reduce(
+    (sum, position) => sum + (position.quantity * position.buyPrice), 
+    0
+  ) || 0) + (dashboardData?.closedPositions?.reduce(
+    (sum, position) => sum + (position.quantity * position.buyPrice), 
+    0
+  ) || 0);
 
   const fetchDashboardData = async () => {
     if (!userId) return false;
@@ -152,11 +170,11 @@ export default function DashboardPage() {
       title: "Account Balance", 
       value: dashboardData ? `₹${((dashboardData.baseAccountBalance || 0) + 
                                  (dashboardData.approvedLoanAmount || 0) - 
-                                 (dashboardData.totalOrdersAmount || 0) + 
+                                 (dashboardData.totalOpenOrdersAmount || 0) + 
                                  (dashboardData.totalProfitLoss || 0)).toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <IndianRupee  className="h-5 w-5 text-primary" />,
-      tooltip: "Base Balance + Loan - Orders + Profit/Loss"
+      tooltip: "Base Balance + Loan - Open Orders + Profit/Loss"
     },
     { 
       title: "Total Deposits", 
@@ -190,9 +208,10 @@ export default function DashboardPage() {
     ...(dashboardData?.totalOrdersAmount ? [
       {
         title: "Order Investments", 
-        value: `₹${dashboardData?.totalOrdersAmount.toLocaleString() || "0"}`, 
+        value: `₹${openTradesInvestment.toLocaleString()}`, 
         color: "text-blue-400",
-        icon: <Briefcase className="h-5 w-5 text-primary" />
+        icon: <Briefcase className="h-5 w-5 text-primary" />,
+        tooltip: `${openTradesCount} open trades`
       }
     ] : [])
   ];
@@ -344,8 +363,11 @@ export default function DashboardPage() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Trading Volume</p>
-                  <p className="text-2xl font-semibold mt-2">₹{dashboardData?.totalVolume?.toLocaleString() || 0}</p>
+                  <p className="text-sm text-muted-foreground">Total Investment Done</p>
+                  <p className="text-2xl font-semibold mt-2">₹{totalInvestmentsDone.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {openTradesCount} open trades
+                  </p>
                 </div>
                 <div className="p-2 rounded-lg bg-primary/10">
                   <BarChart3 className="h-6 w-6 text-primary" />
@@ -464,15 +486,32 @@ export default function DashboardPage() {
                   </div>
                 ) : null}
                 
-                {dashboardData?.totalOrdersAmount ? (
+                {dashboardData?.totalOpenOrdersAmount ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                        <span>Order Investments</span>
+                        <span>Open Order Investments</span>
                       </div>
                       <span className="text-sm font-medium">
-                        -₹{dashboardData?.totalOrdersAmount.toLocaleString() || "0"}
+                        -₹{dashboardData?.totalOpenOrdersAmount.toLocaleString() || "0"}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground pl-5">
+                      {openTradesCount} open trades (₹{openTradesInvestment.toLocaleString()})
+                    </div>
+                  </div>
+                ) : null}
+
+                {dashboardData?.totalClosedOrdersAmount ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-purple-500"></div>
+                        <span>Closed Order Investments</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        ₹{dashboardData?.totalClosedOrdersAmount.toLocaleString() || "0"}
                       </span>
                     </div>
                   </div>
@@ -500,7 +539,7 @@ export default function DashboardPage() {
                     <span className="font-semibold">
                       ₹{((dashboardData?.baseAccountBalance || 0) + 
                          (dashboardData?.approvedLoanAmount || 0) - 
-                         (dashboardData?.totalOrdersAmount || 0) + 
+                         (dashboardData?.totalOpenOrdersAmount || 0) + 
                          (dashboardData?.totalProfitLoss || 0)).toLocaleString()}
                     </span>
                   </div>
@@ -558,7 +597,15 @@ export default function DashboardPage() {
               animate={{ opacity: 1 }}
               className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
             >
-              <h3 className="text-lg font-semibold mb-4">Open Positions</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Open Positions</h3>
+                {openTradesCount > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">{openTradesCount} trades</span> · 
+                    <span className="font-medium ml-1">₹{openTradesInvestment.toLocaleString()}</span> invested
+                  </div>
+                )}
+              </div>
               <div className="space-y-4">
                 {dashboardData?.openPositions?.map((position) => (
                   <div 
@@ -651,9 +698,19 @@ export default function DashboardPage() {
         {/* Positions Tab */}
         <TabsContent value="positions">
           <Card>
-            <CardHeader>
-              <CardTitle>Trading Positions</CardTitle>
-              <CardDescription>Your current open positions</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Trading Positions</CardTitle>
+                <CardDescription>Your current open positions</CardDescription>
+              </div>
+              {openTradesCount > 0 && (
+                <div className="text-sm border border-primary/20 bg-primary/5 rounded-md px-3 py-1">
+                  <span className="font-medium text-primary">{openTradesCount} open trades</span>
+                  <span className="text-muted-foreground"> · </span>
+                  <span className="font-medium text-primary">₹{openTradesInvestment.toLocaleString()}</span>
+                  <span className="text-muted-foreground"> invested</span>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

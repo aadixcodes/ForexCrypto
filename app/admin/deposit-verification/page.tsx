@@ -17,6 +17,11 @@ type Transaction = {
   status: string;
   verified: boolean;
   paymentMethod: string | null;
+  user?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
 };
 
 type User = {
@@ -30,7 +35,6 @@ export default function DepositVerificationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyingMessage, setVerifyingMessage] = useState("");
-  const [users, setUsers] = useState<Record<string, User>>({});
   const [selectedTab, setSelectedTab] = useState<'pending' | 'verified'>('pending');
   const { userId, role } = useAuth();
   const router = useRouter();
@@ -56,36 +60,8 @@ export default function DepositVerificationPage() {
       const data = await response.json();
       
       if (data.success) {
-        // Fetch user details for each transaction
-        const userIds = Array.from(
-          new Set(data.transactions.map((t: Transaction) => t.userId))
-        ) as string[];
-        const usersMap: Record<string, User> = {};
-        
-        await Promise.all(
-          userIds.map(async (transactionUserId: string) => {
-            const userResponse = await fetch(`/api/admin/user-details/${transactionUserId}`, {
-              headers: {
-                'X-User-Id': userId,
-                'X-User-Role': role || '',
-              }
-            });
-            const userData = await userResponse.json();
-            if (userData.success) {
-              usersMap[transactionUserId] = userData.user;
-            }
-          })
-        );
-        
-        setUsers(usersMap);
-        
-        // Enrich transactions with user names
-        const enrichedTransactions = data.transactions.map((transaction: Transaction) => ({
-          ...transaction,
-          userName: usersMap[transaction.userId]?.name || 'Unknown User',
-        }));
-        
-        setTransactions(enrichedTransactions);
+        // Set transactions directly from the API response
+        setTransactions(data.transactions);
       } else {
         console.error('Error fetching transactions:', data.message);
       }
@@ -238,7 +214,7 @@ export default function DepositVerificationPage() {
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
-                      <span>{transaction.userName}</span>
+                      <span>{transaction.user?.name || 'Unknown User'}</span>
                       <a href={`/admin/users/${transaction.userId}`} className="text-primary hover:underline">
                         <ExternalLink className="h-3 w-3" />
                       </a>

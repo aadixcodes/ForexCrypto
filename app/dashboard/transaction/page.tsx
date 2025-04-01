@@ -35,7 +35,7 @@ export default function TransactionPage() {
         }
 
         if (data.success) {
-          setTransactions(data.transactions);
+          setTransactions(data.data.transactions);
         } else {
           throw new Error(data.error || 'Failed to fetch transactions');
         }

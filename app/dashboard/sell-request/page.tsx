@@ -186,7 +186,7 @@ export default function SellRequestPage() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={() => handleSellRequest(order.id)}
-                    disabled={isSubmitting === order.id || order.sellPrice !== null}
+                    disabled={isSubmitting === order.id}
                     className="w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {isSubmitting === order.id ? "Submitting..." : "Request to Sell"}
