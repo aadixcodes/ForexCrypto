@@ -2,10 +2,17 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { CheckCircle, QrCode } from "lucide-react";
+import { CheckCircle, QrCode, Loader2, CreditCard } from "lucide-react";
 import { useAuth } from "@/app/auth-context";
 import Image from "next/image";
 import LoadingOverlay from "@/components/ui/loading-overlay";
+
+type PaymentInfo = {
+  id: string;
+  type: string;
+  upiId: string;
+  merchantName: string;
+};
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
@@ -13,27 +20,63 @@ export default function DepositPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const { userId } = useAuth();
+  const [upiLink, setUpiLink] = useState("");
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
+  const [isLoadingPaymentInfo, setIsLoadingPaymentInfo] = useState(true);
+  const { userId} = useAuth();
+
+  // Fetch active UPI payment info
+  useEffect(() => {
+    const fetchPaymentInfo = async () => {
+      setIsLoadingPaymentInfo(true);
+      try {
+        const response = await fetch("/api/payment-info", {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.paymentInfo) {
+          setPaymentInfo(data.paymentInfo);
+        }
+      } catch (error) {
+        console.error("Failed to fetch payment info:", error);
+      } finally {
+        setIsLoadingPaymentInfo(false);
+      }
+    };
+    
+    fetchPaymentInfo();
+  }, []);
 
   const generateQRCode = () => {
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) <= 0 || !paymentInfo) {
       return;
     }
 
-    const upiID = "developer.aditya09@oksbi"; // Your UPI ID
-    const businessName = "Astex"; // Your Business Name
-    const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR`;
+    const upiID = paymentInfo.upiId;
+    const businessName = paymentInfo.merchantName;
+    const upiLinkData = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR`;
     
-    const qrAPI = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+    setUpiLink(upiLinkData);
+    const qrAPI = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLinkData)}`;
     setQrCodeUrl(qrAPI);
   };
 
-  // Generate QR code when amount changes
+  // Generate QR code when amount changes or payment info is loaded
   useEffect(() => {
-    if (amount && parseFloat(amount) > 0) {
+    if (amount && parseFloat(amount) > 0 && paymentInfo) {
       generateQRCode();
     }
-  }, [amount]);
+  }, [amount, paymentInfo]);
+
+  const handleOpenUpiApp = () => {
+    if (upiLink) {
+      window.location.href = upiLink;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,7 +87,7 @@ export default function DepositPage() {
       const response = await fetch("/api/create-deposit", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ 
           amount: parseFloat(amount),
@@ -103,7 +146,7 @@ export default function DepositPage() {
                   min="10"
                   required
                 />
-                <span className="absolute right-4 top-3.5 text-muted-foreground">USD</span>
+                <span className="absolute right-4 top-3.5 text-muted-foreground">INR</span>
               </div>
             </div>
 
@@ -116,26 +159,50 @@ export default function DepositPage() {
               <p className="text-sm text-muted-foreground text-center mb-4">
                 Use any UPI app to scan this code and make payment
               </p>
-              {qrCodeUrl ? (
-                <div className="bg-white p-4 rounded-lg mx-auto">
-                  <Image 
-                    src={qrCodeUrl} 
-                    alt="UPI QR Code" 
-                    width={200} 
-                    height={200} 
-                    className="mx-auto"
-                  />
+              
+              {isLoadingPaymentInfo ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : !paymentInfo ? (
+                <div className="text-sm text-red-500 p-4 text-center">
+                  Payment information is not available. Please try again later or contact support.
+                </div>
+              ) : qrCodeUrl ? (
+                <div className="space-y-6">
+                  <div className="bg-white p-4 rounded-lg mx-auto">
+                    <Image 
+                      src={qrCodeUrl} 
+                      alt="UPI QR Code" 
+                      width={200} 
+                      height={200} 
+                      className="mx-auto"
+                    />
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleOpenUpiApp}
+                    className="flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <CreditCard className="h-5 w-5" />
+                    Pay Now
+                  </button>
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground">
                   Enter a valid amount to generate QR code
                 </div>
               )}
-              <div className="text-sm space-y-1 w-full">
-                <p><span className="font-medium">UPI ID:</span> developer.aditya09@oksbi</p>
-                <p><span className="font-medium">Merchant:</span> Astex</p>
-                <p><span className="font-medium">Amount:</span> ₹{amount || "0"}</p>
-              </div>
+              
+              {paymentInfo && (
+                <div className="text-sm space-y-1 w-full">
+                  <p><span className="font-medium">UPI ID:</span> {paymentInfo.upiId}</p>
+                  <p><span className="font-medium">Merchant:</span> {paymentInfo.merchantName}</p>
+                  <p><span className="font-medium">Amount:</span> ₹{amount || "0"}</p>
+                </div>
+              )}
+              
               <p className="text-xs text-muted-foreground mt-4">
                 After payment, click &quot;Submit Deposit Request&quot; to record your transaction.
               </p>
@@ -159,7 +226,7 @@ export default function DepositPage() {
           <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Deposit Request Submitted!</h2>
           <p className="text-muted-foreground mb-4">
-            Your deposit request for ${amount} has been submitted successfully.
+            Your deposit request for ₹{amount} has been submitted successfully.
           </p>
           <p className="text-sm text-muted-foreground mb-6">
             Transaction ID: {transactionId}<br />

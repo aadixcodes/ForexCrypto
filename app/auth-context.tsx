@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { getCookie,setCookie,removeCookie } from './utils/cookies';
 export const dynamic = "force-dynamic";
 
+type User = {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+};
+
 type AuthContextType = {
   userId: string | null;
   email: string | null;
@@ -14,6 +21,7 @@ type AuthContextType = {
   logout: () => void;
   login: (email: string, password: string) => Promise<void>;
   role: string | null;
+  user: User | null;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   login: async () => {},
   role: null,
+  user: null,
 });
 
 export const useAuth = () => {
@@ -41,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [name, setName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const storedUserId = getCookie('userId');
@@ -56,6 +66,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (storedRole) setRole(storedRole);
     
+    if (storedUserId && storedEmail && storedName) {
+      setUser({
+        id: storedUserId,
+        email: storedEmail,
+        name: storedName,
+        role: storedRole || 'user',
+      });
+    }
+    
     setIsLoading(false);
   }, []);
 
@@ -64,6 +83,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEmail(email);
     setName(name);
     setRole(role);
+    setUser({
+      id: userId,
+      email,
+      name,
+      role,
+    });
     
     setCookie('userId', userId);
     setCookie('userEmail', email);
@@ -76,6 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEmail(null);
     setName(null);
     setRole(null);
+    setUser(null);
     
     removeCookie('userId');
     removeCookie('userEmail');
@@ -106,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       login,
       role,
+      user,
     }}>
       {children}
     </AuthContext.Provider>

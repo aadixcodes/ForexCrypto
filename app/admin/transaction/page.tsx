@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { DollarSign, ArrowUp, ArrowDown, Calendar, Wallet, CreditCard } from "lucide-react";
+import { IndianRupee , ArrowUp, ArrowDown, Calendar, Wallet, CreditCard } from "lucide-react";
 
 const transactions = [
   { type: "deposit", date: "2023-12-01", description: "Salary Deposit", amount: 5000, status: "completed" },

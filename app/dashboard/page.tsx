@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import TradingViewWidget from "@/components/trading-view-widget";
 import { 
-  DollarSign, 
+  IndianRupee , 
   ArrowUpRight, 
   ArrowDownRight, 
   TrendingUp, 
@@ -12,7 +12,9 @@ import {
   AlertCircle,
   Clock,
   BarChart3,
-  History
+  History,
+  Coins,
+  Briefcase
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth }  from "@/app/auth-context";
@@ -25,9 +27,23 @@ import { toast } from "@/hooks/use-toast";
 
 type DashboardData = {
   accountBalance: number;
+  baseAccountBalance: number;
   totalDeposits: number;
   totalWithdrawals: number;
-  profitLoss: number;
+  openPositionsProfitLoss: number;
+  closedPositionsProfitLoss: number;
+  totalProfitLoss: number;
+  totalTrades: number;
+  totalVolume: number;
+  approvedLoanAmount: number;
+  totalOpenOrdersAmount: number;
+  totalClosedOrdersAmount: number;
+  totalOrdersAmount: number;
+  approvedLoanDetails?: {
+    amount: number;
+    duration: number;
+    updatedAt: string;
+  } | null;
   recentTransactions: Array<{
     id: string;
     type: 'DEPOSIT' | 'WITHDRAW';
@@ -45,6 +61,16 @@ type DashboardData = {
     quantity: number;
     buyPrice: number;
   }>;
+  closedPositions: Array<{
+    id: string;
+    symbol: string;
+    type: string;
+    profitLoss: number;
+    tradeDate: string;
+    quantity: number;
+    buyPrice: number;
+    sellPrice: number;
+  }>;
 };
 
 export default function DashboardPage() {
@@ -55,6 +81,22 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Calculate open positions metrics
+  const openTradesCount = dashboardData?.openPositions?.length || 0;
+  const openTradesInvestment = dashboardData?.openPositions?.reduce(
+    (sum, position) => sum + (position.quantity * position.buyPrice), 
+    0
+  ) || 0;
+
+  // Calculate total investments done
+  const totalInvestmentsDone = (dashboardData?.openPositions?.reduce(
+    (sum, position) => sum + (position.quantity * position.buyPrice), 
+    0
+  ) || 0) + (dashboardData?.closedPositions?.reduce(
+    (sum, position) => sum + (position.quantity * position.buyPrice), 
+    0
+  ) || 0);
 
   const fetchDashboardData = async () => {
     if (!userId) return false;
@@ -112,7 +154,7 @@ export default function DashboardPage() {
     }
   };
 
-  const profitLoss = dashboardData?.profitLoss ?? 0;
+  const profitLoss = dashboardData?.totalProfitLoss ?? 0;
   const profitLossPercentage = dashboardData?.accountBalance 
     ? ((profitLoss / dashboardData.accountBalance) * 100).toFixed(2) + '%'
     : '0%';
@@ -126,31 +168,52 @@ export default function DashboardPage() {
   const stats = [
     { 
       title: "Account Balance", 
-      value: dashboardData ? `$${dashboardData.accountBalance.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${((dashboardData.baseAccountBalance || 0) + 
+                                 (dashboardData.approvedLoanAmount || 0) - 
+                                 (dashboardData.totalOpenOrdersAmount || 0) + 
+                                 (dashboardData.totalProfitLoss || 0)).toLocaleString()}` : "₹0", 
       color: "text-green-400",
-      icon: <DollarSign className="h-5 w-5 text-primary" />
+      icon: <IndianRupee  className="h-5 w-5 text-primary" />,
+      tooltip: "Base Balance + Loan - Open Orders + Profit/Loss"
     },
     { 
       title: "Total Deposits", 
-      value: dashboardData ? `$${dashboardData.totalDeposits.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.totalDeposits.toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <TrendingUp className="h-5 w-5 text-primary" />
     },
     { 
       title: "Total Withdrawals", 
-      value: dashboardData ? `$${dashboardData.totalWithdrawals.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.totalWithdrawals.toLocaleString()}` : "₹0", 
       color: "text-green-400",
       icon: <ArrowUpRight className="h-5 w-5 text-primary" />
     },
     { 
       title: "Profit/Loss", 
-      value: dashboardData ? `$${dashboardData.profitLoss.toLocaleString()}` : "$0", 
+      value: dashboardData ? `₹${dashboardData.totalProfitLoss?.toLocaleString() || "0"}` : "₹0", 
       change: profitLossPercentage,
       color: profitLoss >= 0 ? "text-green-400" : "text-red-400",
       icon: profitLoss >= 0 ? 
         <TrendingUp className="h-5 w-5 text-primary" /> : 
         <TrendingDown className="h-5 w-5 text-primary" />
     },
+    ...(dashboardData?.approvedLoanAmount ? [
+      {
+        title: "Approved Loan", 
+        value: `₹${dashboardData?.approvedLoanAmount.toLocaleString() || "0"}`, 
+        color: "text-blue-400",
+        icon: <Coins className="h-5 w-5 text-primary" />
+      }
+    ] : []),
+    ...(dashboardData?.totalOrdersAmount ? [
+      {
+        title: "Order Investments", 
+        value: `₹${openTradesInvestment.toLocaleString()}`, 
+        color: "text-blue-400",
+        icon: <Briefcase className="h-5 w-5 text-primary" />,
+        tooltip: `${openTradesCount} open trades`
+      }
+    ] : [])
   ];
 
   // Check if there are any pending transactions
@@ -223,8 +286,8 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Mobile View for Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -243,6 +306,9 @@ export default function DashboardPage() {
                     <span className={`text-sm ${stat.color}`}>{stat.change}</span>
                   )}
                 </div>
+                {stat.tooltip && (
+                  <p className="text-xs text-muted-foreground mt-1">{stat.tooltip}</p>
+                )}
               </div>
               <div className="p-2 rounded-lg bg-primary/10">
                 {stat.icon}
@@ -271,11 +337,89 @@ export default function DashboardPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          {/* Deposits vs Withdrawals Visualization */}
-          <Card>
+          {/* Trading Statistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Trades</p>
+                  <p className="text-2xl font-semibold mt-2">{dashboardData?.totalTrades || 0}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Briefcase className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Investment Done</p>
+                  <p className="text-2xl font-semibold mt-2">₹{totalInvestmentsDone.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {openTradesCount} open trades
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-background/80 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Closed Positions P&L</p>
+                  <p className={`text-2xl font-semibold mt-2 ${
+                    (dashboardData?.closedPositionsProfitLoss || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    ₹{Math.abs(dashboardData?.closedPositionsProfitLoss || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/10">
+                  {(dashboardData?.closedPositionsProfitLoss || 0) >= 0 ? (
+                    <ArrowUpRight className="h-6 w-6 text-green-400" />
+                  ) : (
+                    <ArrowDownRight className="h-6 w-6 text-red-400" />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Loan Alert for Approved Loans */}
+          {dashboardData && dashboardData.approvedLoanAmount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-500/10 border border-blue-500/30 text-blue-500 p-4 rounded-lg flex items-center gap-3"
+            >
+              <Coins className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Loan Approved</p>
+                <p className="text-sm">Your loan request for ₹{dashboardData.approvedLoanAmount.toLocaleString()} has been approved and added to your account balance.</p>
+              </div>
+            </motion.div>
+          )}
+           {/* Deposits vs Withdrawals Visualization */}
+           <Card>
             <CardHeader>
-              <CardTitle>Financial Activity</CardTitle>
-              <CardDescription>Deposits vs Withdrawals</CardDescription>
+              <CardTitle>Deposits vs Withdrawals</CardTitle>
+              <CardDescription>Transaction activity breakdown</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -286,7 +430,7 @@ export default function DashboardPage() {
                       <span>Deposits</span>
                     </div>
                     <span className="text-sm font-medium">
-                      ${dashboardData?.totalDeposits.toLocaleString() || "0"}
+                      ₹{dashboardData?.totalDeposits.toLocaleString() || "0"}
                     </span>
                   </div>
                   <Progress value={depositPercentage} className="h-2 bg-muted" indicatorClassName="bg-green-500" />
@@ -299,7 +443,7 @@ export default function DashboardPage() {
                       <span>Withdrawals</span>
                     </div>
                     <span className="text-sm font-medium">
-                      ${dashboardData?.totalWithdrawals.toLocaleString() || "0"}
+                      ₹{dashboardData?.totalWithdrawals.toLocaleString() || "0"}
                     </span>
                   </div>
                   <Progress value={100 - depositPercentage} className="h-2 bg-muted" indicatorClassName="bg-red-500" />
@@ -307,6 +451,104 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Financial Activity Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial Activity</CardTitle>
+              <CardDescription>Account Balance Breakdown</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                      <span>Base Balance (Deposits - Withdrawals)</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      ₹{dashboardData?.baseAccountBalance.toLocaleString() || "0"}
+                    </span>
+                  </div>
+                </div>
+                
+                {dashboardData?.approvedLoanAmount ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                        <span>Loan Amount</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        +₹{dashboardData?.approvedLoanAmount.toLocaleString() || "0"}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+                
+                {dashboardData?.totalOpenOrdersAmount ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                        <span>Open Order Investments</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        -₹{dashboardData?.totalOpenOrdersAmount.toLocaleString() || "0"}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground pl-5">
+                      {openTradesCount} open trades (₹{openTradesInvestment.toLocaleString()})
+                    </div>
+                  </div>
+                ) : null}
+
+                {dashboardData?.totalClosedOrdersAmount ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-purple-500"></div>
+                        <span>Closed Order Investments</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        ₹{dashboardData?.totalClosedOrdersAmount.toLocaleString() || "0"}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {dashboardData?.totalProfitLoss !== undefined && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-3 w-3 rounded-full ${dashboardData.totalProfitLoss >= 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span>Profit/Loss</span>
+                      </div>
+                      <span className={`text-sm font-medium ${dashboardData.totalProfitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {dashboardData.totalProfitLoss >= 0 ? '+' : '-'}₹{Math.abs(dashboardData.totalProfitLoss).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="pt-2 mt-2 border-t border-dashed">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <span>Available Balance</span>
+                    </div>
+                    <span className="font-semibold">
+                      ₹{((dashboardData?.baseAccountBalance || 0) + 
+                         (dashboardData?.approvedLoanAmount || 0) - 
+                         (dashboardData?.totalOpenOrdersAmount || 0) + 
+                         (dashboardData?.totalProfitLoss || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+         
 
           {/* Recent Activity Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -327,14 +569,10 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <span className={`text-sm ${transaction.type === 'DEPOSIT' ? 'text-green-400' : 'text-red-400'}`}>
-                        {transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                        {transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                       </span>
                       <p className="text-xs text-muted-foreground">
-                        {transaction.status === 'PENDING' ? (
-                          <span className="flex items-center gap-1 text-yellow-400">
-                            <Clock className="h-3 w-3" /> Pending
-                          </span>
-                        ) : transaction.status === 'COMPLETED' ? (
+                        {transaction.status === 'COMPLETED' ? (
                           <span className={`text-green-400 ${transaction.type === 'DEPOSIT' && !transaction.verified ? 'flex items-center gap-1' : ''}`}>
                             {transaction.type === 'DEPOSIT' && !transaction.verified ? (
                               <>
@@ -359,21 +597,40 @@ export default function DashboardPage() {
               animate={{ opacity: 1 }}
               className="bg-background/50 backdrop-blur-lg rounded-xl border p-6 shadow-sm"
             >
-              <h3 className="text-lg font-semibold mb-4">Open Positions</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Open Positions</h3>
+                {openTradesCount > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">{openTradesCount} trades</span> · 
+                    <span className="font-medium ml-1">₹{openTradesInvestment.toLocaleString()}</span> invested
+                  </div>
+                )}
+              </div>
               <div className="space-y-4">
                 {dashboardData?.openPositions?.map((position) => (
-                  <div key={position.id} className="flex justify-between items-center p-3 hover:bg-accent/10 rounded-lg">
-                    <div>
-                      <p className="font-medium">{position.symbol}</p>
-                      <div className="flex gap-2 text-sm text-muted-foreground">
-                        <span>{position.quantity} units</span>
-                        <span>@</span>
-                        <span>${position.buyPrice}</span>
-                      </div>
+                  <div 
+                    key={position.id} 
+                    className="grid grid-cols-5 gap-4 p-4 border-b last:border-0 items-center"
+                  >
+                    <div className="font-medium">{position.symbol}</div>
+                    <div className="text-sm">
+                      <span className="text-green-500 flex items-center gap-1">
+                        <TrendingUp className="h-4 w-4" /> {position.type}
+                      </span>
                     </div>
-                    <span className={`text-sm ${position.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {position.profitLoss >= 0 ? '+' : '-'}${Math.abs(position.profitLoss).toLocaleString()}
-                    </span>
+                    <div className="text-sm">
+                      <span className="font-medium">
+                        {position.quantity} @ ₹{position.buyPrice}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      {new Date(position.tradeDate).toLocaleDateString()}
+                    </div>
+                    <div className={`text-right font-medium ${
+                      position.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {position.profitLoss >= 0 ? '+' : '-'}₹{Math.abs(position.profitLoss).toLocaleString()}
+                    </div>
                   </div>
                 )) || (
                   <p className="text-muted-foreground text-center">No open positions</p>
@@ -415,7 +672,7 @@ export default function DashboardPage() {
                         <p className={`font-medium ${
                           transaction.type === 'DEPOSIT' ? 'text-green-500' : 'text-red-500'
                         }`}>
-                          {transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                          {transaction.type === 'DEPOSIT' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                         </p>
                         <p className={`text-xs ${
                           transaction.status === 'COMPLETED' ? 
@@ -441,9 +698,19 @@ export default function DashboardPage() {
         {/* Positions Tab */}
         <TabsContent value="positions">
           <Card>
-            <CardHeader>
-              <CardTitle>Trading Positions</CardTitle>
-              <CardDescription>Your current open positions</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Trading Positions</CardTitle>
+                <CardDescription>Your current open positions</CardDescription>
+              </div>
+              {openTradesCount > 0 && (
+                <div className="text-sm border border-primary/20 bg-primary/5 rounded-md px-3 py-1">
+                  <span className="font-medium text-primary">{openTradesCount} open trades</span>
+                  <span className="text-muted-foreground"> · </span>
+                  <span className="font-medium text-primary">₹{openTradesInvestment.toLocaleString()}</span>
+                  <span className="text-muted-foreground"> invested</span>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -455,18 +722,14 @@ export default function DashboardPage() {
                     >
                       <div className="font-medium">{position.symbol}</div>
                       <div className="text-sm">
-                        {position.type === 'LONG' ? (
-                          <span className="text-green-500 flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4" /> Long
-                          </span>
-                        ) : (
-                          <span className="text-red-500 flex items-center gap-1">
-                            <TrendingDown className="h-4 w-4" /> Short
-                          </span>
-                        )}
+                        <span className="text-green-500 flex items-center gap-1">
+                          <TrendingUp className="h-4 w-4" /> {position.type}
+                        </span>
                       </div>
                       <div className="text-sm">
-                        {position.quantity} @ ${position.buyPrice}
+                        <span className="font-medium">
+                          {position.quantity} @ ₹{position.buyPrice}
+                        </span>
                       </div>
                       <div className="text-sm">
                         {new Date(position.tradeDate).toLocaleDateString()}
@@ -474,7 +737,7 @@ export default function DashboardPage() {
                       <div className={`text-right font-medium ${
                         position.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
                       }`}>
-                        {position.profitLoss >= 0 ? '+' : '-'}${Math.abs(position.profitLoss).toLocaleString()}
+                        {position.profitLoss >= 0 ? '+' : '-'}₹{Math.abs(position.profitLoss).toLocaleString()}
                       </div>
                     </div>
                   ))

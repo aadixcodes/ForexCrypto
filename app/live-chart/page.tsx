@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import TradingViewWidget from "@/components/trading-view-widget";
-import { DollarSign, Activity, Timer, BarChart, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from "lucide-react";
+import { IndianRupee , Activity, Timer, BarChart, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from "lucide-react";
 
 
 export default function ChartsPage() {

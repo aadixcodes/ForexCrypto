@@ -115,7 +115,7 @@ export default function WithdrawPage() {
           <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Withdrawal Requested!</h2>
           <p className="text-muted-foreground mb-4">
-            ${amount} will be transferred to your registered bank account
+          ₹{amount} will be transferred to your registered bank account
           </p>
           <button
             onClick={() => {

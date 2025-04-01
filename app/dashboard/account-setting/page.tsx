@@ -28,6 +28,8 @@ interface UserData {
 export default function AccountSetting() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { userId } = useAuth();
   
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -36,62 +38,135 @@ export default function AccountSetting() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('/api/user');
-        if (!response.ok) throw new Error('Failed to fetch user data');
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/user', {
+          headers: {
+            'X-User-Id': userId || ''
+          }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch user data');
+        }
         
         const data = await response.json();
-        // Convert date to YYYY-MM-DD format for input
-        data.dob = new Date(data.dob).toISOString().split('T')[0];
-        data.nomineeDob = new Date(data.nomineeDob).toISOString().split('T')[0];
         
-        setUserData(data);
-        setFormData(data);
-        setIsLoading(false);
+        // Transform API response to match the interface
+        const transformedData: UserData = {
+          firstName: data.name?.split(' ')[0] || '',
+          lastName: data.name?.split(' ').slice(1).join(' ') || '',
+          email: data.email || '',
+          username: data.email?.split('@')[0] || '',
+          gender: data.gender || '',
+          mobile: data.phone || '',
+          aadhar: data.aadharNo || '',
+          dob: data.dob ? new Date(data.dob).toISOString().split('T')[0] : '',
+          address: data.address || '',
+          bankName: data.bankName || '',
+          accountHolder: data.accountHolder || '',
+          accountNumber: data.accountNumber || '',
+          ifsc: data.ifscCode || '',
+          pan: data.pan || '',
+          nomineeName: data.nomineeName || '',
+          nomineeRelation: data.nomineeRelation || '',
+          nomineeDob: data.nomineeDob ? new Date(data.nomineeDob).toISOString().split('T')[0] : '',
+        };
+        
+        setUserData(transformedData);
+        setFormData(transformedData);
       } catch (error) {
         console.error('Error fetching user data:', error);
+        setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      } finally {
         setIsLoading(false);
       }
     };
 
     if (userId) {
       fetchUserData();
+    } else {
+      setIsLoading(false);
     }
   }, [userId]);
 
   const handleEditToggle = () => {
+    if (isEditing) {
+      // Cancel edit - restore the original data
+      setFormData(userData ? { ...userData } : null);
+    }
     setIsEditing(!isEditing);
-    if (!isEditing && userData) setFormData({ ...userData });
+  };
+
+  const handleInputChange = (key: keyof UserData, value: string) => {
+    if (!formData) return;
+    setFormData({ ...formData, [key]: value });
   };
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData) return;
+    if (!formData || !userId) return;
 
     try {
+      setSaveLoading(true);
+      setError(null);
+      
       const response = await fetch('/api/user', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-User-Id': userId
         },
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error('Failed to update user data');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user data');
+      }
 
-      const updatedData = await response.json();
-      // Convert dates to YYYY-MM-DD format for input
-      updatedData.dob = new Date(updatedData.dob).toISOString().split('T')[0];
-      updatedData.nomineeDob = new Date(updatedData.nomineeDob).toISOString().split('T')[0];
+      const data = await response.json();
       
-      setUserData(updatedData);
+      // Transform API response to match our interface
+      const transformedData: UserData = {
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        email: data.email || '',
+        username: data.username || '',
+        gender: data.gender || '',
+        mobile: data.mobile || '',
+        aadhar: data.aadhar || '',
+        dob: data.dob ? new Date(data.dob).toISOString().split('T')[0] : '',
+        address: data.address || '',
+        bankName: data.bankName || '',
+        accountHolder: data.accountHolder || '',
+        accountNumber: data.accountNumber || '',
+        ifsc: data.ifsc || '',
+        pan: data.pan || '',
+        nomineeName: data.nomineeName || '',
+        nomineeRelation: data.nomineeRelation || '',
+        nomineeDob: data.nomineeDob ? new Date(data.nomineeDob).toISOString().split('T')[0] : '',
+      };
+      
+      setUserData(transformedData);
+      setFormData(transformedData);
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating user data:', error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
   if (isLoading) {
     return <div className="p-4">Loading...</div>;
+  }
+
+  if (!userId) {
+    return <div className="p-4">Please log in to view account settings</div>;
   }
 
   if (!userData || !formData) {
@@ -108,6 +183,12 @@ export default function AccountSetting() {
         <h1 className="text-3xl font-bold text-primary mb-6">Account Settings</h1>
       </motion.div>
 
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          {error}
+        </div>
+      )}
+
       {/* Profile Section */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
@@ -122,6 +203,7 @@ export default function AccountSetting() {
           <button
             onClick={handleEditToggle}
             className="flex items-center gap-2 text-primary hover:text-primary/80"
+            disabled={saveLoading}
           >
             {isEditing ? <X className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
             {isEditing ? "Cancel" : "Edit"}
@@ -141,9 +223,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -151,9 +233,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -178,10 +260,11 @@ export default function AccountSetting() {
                 <label className="text-sm text-muted-foreground mb-2 block">Gender</label>
                 <select
                   value={formData.gender}
-                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  onChange={(e) => handleInputChange('gender', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 >
+                  <option value="">Select gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
@@ -192,9 +275,9 @@ export default function AccountSetting() {
                 <input
                   type="tel"
                   value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  onChange={(e) => handleInputChange('mobile', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -202,9 +285,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.aadhar}
-                  onChange={(e) => setFormData({ ...formData, aadhar: e.target.value })}
+                  onChange={(e) => handleInputChange('aadhar', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -212,9 +295,9 @@ export default function AccountSetting() {
                 <input
                   type="date"
                   value={formData.dob}
-                  onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                  onChange={(e) => handleInputChange('dob', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -222,9 +305,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
             </div>
@@ -242,9 +325,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.bankName}
-                  onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                  onChange={(e) => handleInputChange('bankName', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -252,9 +335,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.accountHolder}
-                  onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
+                  onChange={(e) => handleInputChange('accountHolder', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -262,9 +345,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.accountNumber}
-                  onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                  onChange={(e) => handleInputChange('accountNumber', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -272,9 +355,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.ifsc}
-                  onChange={(e) => setFormData({ ...formData, ifsc: e.target.value })}
+                  onChange={(e) => handleInputChange('ifsc', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -282,9 +365,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.pan}
-                  onChange={(e) => setFormData({ ...formData, pan: e.target.value })}
+                  onChange={(e) => handleInputChange('pan', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
             </div>
@@ -302,9 +385,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.nomineeName}
-                  onChange={(e) => setFormData({ ...formData, nomineeName: e.target.value })}
+                  onChange={(e) => handleInputChange('nomineeName', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -312,9 +395,9 @@ export default function AccountSetting() {
                 <input
                   type="text"
                   value={formData.nomineeRelation}
-                  onChange={(e) => setFormData({ ...formData, nomineeRelation: e.target.value })}
+                  onChange={(e) => handleInputChange('nomineeRelation', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
               <div>
@@ -322,9 +405,9 @@ export default function AccountSetting() {
                 <input
                   type="date"
                   value={formData.nomineeDob}
-                  onChange={(e) => setFormData({ ...formData, nomineeDob: e.target.value })}
+                  onChange={(e) => handleInputChange('nomineeDob', e.target.value)}
                   className="w-full bg-background border rounded-lg p-3"
-                  disabled={!isEditing}
+                  disabled={!isEditing || saveLoading}
                 />
               </div>
             </div>
@@ -338,9 +421,10 @@ export default function AccountSetting() {
             >
               <button
                 type="submit"
-                className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90"
+                className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                disabled={saveLoading}
               >
-                Save Changes
+                {saveLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </motion.div>
           )}

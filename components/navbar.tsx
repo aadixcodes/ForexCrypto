@@ -5,12 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LineChart, Wallet, BookOpen, BarChart3, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -39,24 +33,19 @@ export function Navbar() {
   }, []);
 
   const menuItems = [
-    { href: "#about", label: "About Us" },
+    { href: "/about", label: "About Us", isPage: true },
     { href: "#benefits", label: "Benefits" },
     { href: "#features", label: "Features" },
-    { href: "#charts", label: "Live Chart" },
     { href: "#contact", label: "Contact" },
   ];
 
-  // const dropdownItems = {
-  //   "Forex Trading": [
-  //     { href: "/market-rates", label: "Market Rates", icon: <LineChart className="h-4 w-4" /> },
-  //     { href: "/tools", label: "Trading Tools", icon: <Wallet className="h-4 w-4" /> },
-  //   ],
-  //   "Trading Academy": [
-  //     { href: "/education", label: "Education", icon: <BookOpen className="h-4 w-4" /> },
-  //   ],
-  // };
-
-  const handleScroll = (href: string) => {
+  const handleScroll = (href: string, isPage: boolean = false) => {
+    if (isPage) {
+      router.push(href);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+    
     if (window.location.pathname === "/") {
       // Smooth scroll on homepage
       const section = document.querySelector(href);
@@ -91,36 +80,29 @@ export function Navbar() {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center justify-center flex-1 space-x-4 xl:space-x-6">
               {menuItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleScroll(item.href);
-                  }}
-                  className="text-base xl:text-lg hover:text-primary transition-colors cursor-pointer"
-                >
-                  {item.label}
-                </a>
+                item.isPage ? (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="text-base xl:text-lg hover:text-primary transition-colors cursor-pointer"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleScroll(item.href);
+                    }}
+                    className="text-base xl:text-lg hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {item.label}
+                  </a>
+                )
               ))}
-              
-              {/* {Object.entries(dropdownItems).map(([title, items]) => (
-                <DropdownMenu key={title}>
-                  <DropdownMenuTrigger className="text-base xl:text-lg hover:text-primary transition-colors">
-                    {title}
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {items.map((item) => (
-                      <DropdownMenuItem key={item.href}>
-                        <Link href={item.href} className="flex items-center">
-                          {item.icon}
-                          <span className="ml-2">{item.label}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ))} */}
             </nav>
 
             {/* CTA Buttons */}
@@ -203,37 +185,29 @@ export function Navbar() {
               <div className="flex-1 overflow-y-auto">
                 <nav className="flex flex-col items-center py-8 space-y-6">
                   {menuItems.map((item) => (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleScroll(item.href);
-                      }}
-                      className="text-xl hover:text-primary transition-colors cursor-pointer"
-                    >
-                      {item.label}
-                    </a>
+                    item.isPage ? (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="text-xl hover:text-primary transition-colors cursor-pointer"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <a
+                        key={item.href}
+                        href={item.href}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleScroll(item.href);
+                        }}
+                        className="text-xl hover:text-primary transition-colors cursor-pointer"
+                      >
+                        {item.label}
+                      </a>
+                    )
                   ))}
-                  
-                  {/* {Object.entries(dropdownItems).map(([title, items]) => (
-                    <div key={title} className="flex flex-col items-center space-y-4">
-                      <h3 className="text-xl font-medium">{title}</h3>
-                      <div className="flex flex-col items-center space-y-3">
-                        {items.map((item) => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            className="flex items-center text-lg text-muted-foreground hover:text-primary transition-colors"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            {item.icon}
-                            <span className="ml-2">{item.label}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))} */}
                 </nav>
               </div>
 

@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
-
 export async function POST(request: Request) {
+    const { currentPassword, newPassword } = await request.json();
+    const userId = request.headers.get('X-User-Id');
+
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!currentPassword || !newPassword) {
+        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
     try {
-        const { userId, currentPassword, newPassword } = await request.json();
-
-        if (!userId || !currentPassword || !newPassword) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-        }
-
-        // Find user
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { password: true }
@@ -22,26 +24,22 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Verify current password
         const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+
         if (!isPasswordValid) {
             return NextResponse.json({ error: 'Current password is incorrect' }, { status: 401 });
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update password
         await prisma.user.update({
             where: { id: userId },
             data: { password: hashedPassword }
         });
 
-        return NextResponse.json({ message: 'Password updated successfully' }, { status: 200 });
+        return NextResponse.json({ message: 'Password updated successfully' });
     } catch (error) {
-        if (error instanceof Error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-        return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+        console.error('Error changing password:', error);
+        return NextResponse.json({ error: 'Failed to change password' }, { status: 500 });
     }
 } 

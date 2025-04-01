@@ -39,19 +39,31 @@ export async function PUT(
     const { userId } = params;
     const userData = await request.json();
 
-    // Parse the dob field as a Date object
-    if (userData.dob) {
-      userData.dob = new Date(userData.dob);
+    // Filter out relationship fields which can't be directly updated
+    const { transactions, orders, loanRequests, ...updateData } = userData;
+
+    // Parse date fields as Date objects
+    if (updateData.dob) {
+      updateData.dob = new Date(updateData.dob);
+    }
+    
+    if (updateData.nomineeDob) {
+      updateData.nomineeDob = new Date(updateData.nomineeDob);
     }
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: userData,
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, user });
   } catch (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    console.error("Error updating user:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Update failed", 
+      details: error instanceof Error ? error.message : "Unknown error" 
+    }, { status: 500 });
   }
 }
 
@@ -62,12 +74,38 @@ export async function DELETE(
 ) {
   try {
     const { userId } = params;
-    await prisma.user.delete({
-      where: { id: userId }
-    });
+    
+    // Delete related records first to handle foreign key constraints
+    await prisma.$transaction([
+      // Delete related transactions
+      prisma.transaction.deleteMany({
+        where: { userId }
+      }),
+      
+      // Delete related orders
+      prisma.orderHistory.deleteMany({
+        where: { userId }
+      }),
+      
+      // Delete related loan requests
+      prisma.loanRequest.deleteMany({
+        where: { userId }
+      }),
+      
+      // Finally delete the user
+      prisma.user.delete({
+        where: { id: userId }
+      })
+    ]);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
+    console.error("Error deleting user:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Failed to delete user", 
+      details: error instanceof Error ? error.message : "Unknown error" 
+    }, { status: 500 });
   }
 }
 
@@ -90,7 +128,7 @@ export async function GET(
       include: {
         transactions: true,
         orders: true,
-        loanRequest: true,
+        loanRequests: true,
       },
     });
     

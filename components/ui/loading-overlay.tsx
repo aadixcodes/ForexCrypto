@@ -29,4 +29,4 @@ const LoadingOverlay: FC<LoadingOverlayProps> = ({
   );
 };
 
-export default LoadingOverlay; 
+export default LoadingOverlay;

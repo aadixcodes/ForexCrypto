@@ -1,6 +1,6 @@
 'use client';
 import { motion } from "framer-motion";
-import { Bell, UserCircle, CheckCircle2, AlertTriangle, DollarSign } from "lucide-react";
+import { Bell, UserCircle, CheckCircle2, AlertTriangle, IndianRupee  } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Menu, Transition } from '@headlessui/react'
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
@@ -41,7 +41,7 @@ export function AdminHeader() {
     {
       id: 3,
       title: "Deposit Received",
-      message: "$5,000 deposit has been credited to your account",
+      message: "₹5,000 deposit has been credited to your account",
       timestamp: "4 hours ago",
       type: "info"
     }
@@ -109,7 +109,7 @@ export function AdminHeader() {
                                   ) : notification.type === 'warning' ? (
                                     <AlertTriangle className="h-5 w-5 text-yellow-400" />
                                   ) : (
-                                    <DollarSign className="h-5 w-5 text-blue-400" />
+                                   <IndianRupee  className="h-5 w-5 text-blue-400" />
                                   )}
                                 </div>
                                 <div className="flex-1">
